@@ -1,234 +1,188 @@
-import { nextClientReference } from '../utils/references';
-import { useState } from 'react';
-import { useDialog } from '../hooks/useDialog';
-import { X, Upload, Building2, User, Phone, Mail, Palette } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, User, Mail, Phone, Building, FileText, Check } from 'lucide-react';
 import { useStore } from '../store/useStore';
-import type { Client } from '../types';
+import { Client } from '../types';
 
 interface ClientModalProps {
   isOpen: boolean;
   onClose: () => void;
-  client?: Client;
-  onAddProject?: (client:Client)=>void;
+  client?: Client | null;
 }
 
-export const ClientModal = ({ isOpen, onClose, client, onAddProject }: ClientModalProps) => {
-  const { createClient, updateClient, clients, referenceCounters } = useStore();
-  const prefix="MFx-"+String(new Date().getFullYear()).slice(-2);
-  const reference=client?.refId || nextClientReference(clients,referenceCounters[prefix] || 0).refId;
-  const [formData, setFormData] = useState<Partial<Client>>({
-    businessName: client?.businessName || '',
-    contactPerson: client?.contactPerson || '',
-    phone: client?.phone || '',
-    email: client?.email || '',
-    color: client?.color || '#0b58bd',
-    logoUrl: client?.logoUrl || '',
+export const ClientModal: React.FC<ClientModalProps> = ({
+  isOpen,
+  onClose,
+  client,
+}) => {
+  const { addClient, updateClient } = useStore();
+  const [formData, setFormData] = useState({
+    name: '',
+    company: '',
+    email: '',
+    phone: '',
+    notes: '',
   });
 
-  const [error, setError] = useState('');
-  const [logoPreview, setLogoPreview] = useState<string>(client?.logoUrl || '');
-
-  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (!['image/png','image/jpeg','image/webp'].includes(file.type) || file.size > 2 * 1024 * 1024) { setError('Choose a PNG, JPG or WebP image up to 2MB.'); return; }
-      setError('');
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setLogoPreview(reader.result as string);
-        setFormData(current => ({ ...current, logoUrl: reader.result as string }));
-      };
-      reader.readAsDataURL(file);
+  useEffect(() => {
+    if (client) {
+      setFormData({
+        name: client.name || '',
+        company: client.company || '',
+        email: client.email || '',
+        phone: client.phone || '',
+        notes: client.notes || '',
+      });
+    } else {
+      setFormData({
+        name: '',
+        company: '',
+        email: '',
+        phone: '',
+        notes: '',
+      });
     }
-  };
+  }, [client, isOpen]);
+
+  if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.name.trim()) return;
 
-    if (!formData.businessName?.trim() || !formData.contactPerson?.trim() || !formData.phone?.trim()) { setError('Complete the required fields.'); return; }
-    if (!/^#[0-9a-f]{6}$/i.test(formData.color || '')) { setError('Use a valid hex color, e.g. #0b58bd.'); return; }
-    formData.businessName = formData.businessName.trim();
     if (client) {
-      // Update existing client
       updateClient(client.id, formData);
     } else {
-      // Create new client
-      const newClient = createClient({
-        businessName: formData.businessName!,
-        contactPerson: formData.contactPerson!,
-        phone: formData.phone!,
-        email: formData.email,
-        color: formData.color,
-        logoUrl: formData.logoUrl,
-      });
-      if ((e.nativeEvent as SubmitEvent).submitter?.getAttribute('value') === 'project') {onAddProject?.(newClient);return;}
+      addClient(formData);
     }
-
     onClose();
   };
 
-  const dialogRef = useDialog(onClose);
-  if (!isOpen) return null;
-
   return (
-    <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Client form" className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-surface rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
+      <div 
+        className="relative w-full max-w-lg bg-zinc-950 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        dir="rtl"
+      >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-line">
-          <h2 className="text-xl font-bold text-ink">
-            {client ? 'Edit Client' : 'Add New Client'}
-          </h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-zinc-900/50">
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
+              <User className="w-5 h-5" />
+            </div>
+            <h3 className="text-base font-bold text-zinc-100">
+              {client ? 'تعديل بيانات العميل' : 'إضافة عميل جديد'}
+            </h3>
+          </div>
           <button
-            aria-label="Close client form" onClick={onClose}
-            className="p-2 hover:bg-canvas dark:hover:bg-surface rounded-lg transition-colors"
+            type="button"
+            onClick={onClose}
+            className="text-zinc-400 hover:text-zinc-100 p-1.5 rounded-lg hover:bg-zinc-800 transition-colors"
           >
-            <X className="w-5 h-5 text-muted" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6"><p className="ref-preview">Client reference: <strong>{reference}</strong></p>
-          {error && <p role="alert" className="text-red-600">{error}</p>}
-          {/* Logo Upload */}
+        {/* Body Form */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1 text-right">
           <div>
-            <label className="block text-sm font-semibold text-ink text-muted mb-2">
-              Client Logo
+            <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+              اسم العميل <span className="text-emerald-500">*</span>
             </label>
-            <div className="flex items-center gap-4">
-              <div className="w-24 h-24 rounded-lg border-2 border-dashed border-line flex items-center justify-center overflow-hidden bg-canvas bg-surface">
-                {logoPreview ? (
-                  <img src={logoPreview} alt="Logo preview" className="w-full h-full object-contain" />
-                ) : (
-                  <Upload className="w-8 h-8 text-muted" />
-                )}
-              </div>
-              <div className="flex-1">
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  onChange={handleLogoChange}
-                  className="hidden"
-                  id="logo-upload"
-                />
-                <label
-                  htmlFor="logo-upload"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-canvas bg-surface text-ink text-muted rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors cursor-pointer"
-                >
-                  <Upload className="w-4 h-4" />
-                  Upload Logo
-                </label>
-                <p className="text-xs text-muted mt-2">
-                  PNG, JPG or WebP (max 2MB)
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Business Name */}
-          <div>
-            <label className="block text-sm font-semibold text-ink text-muted mb-2">
-              <Building2 className="w-4 h-4 inline mr-2" />
-              Business Name *
-            </label>
-            <input
-              type="text"
-              required
-              aria-label="Business name" value={formData.businessName}
-              onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
-              className="w-full px-4 py-2 bg-canvas bg-surface border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-ink"
-              placeholder="e.g., Ghada Beauty & More"
-            />
-          </div>
-
-          {/* Contact Person */}
-          <div>
-            <label className="block text-sm font-semibold text-ink text-muted mb-2">
-              <User className="w-4 h-4 inline mr-2" />
-              Contact Person *
-            </label>
-            <input
-              type="text"
-              required
-              aria-label="Contact person" value={formData.contactPerson}
-              onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
-              className="w-full px-4 py-2 bg-canvas bg-surface border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-ink"
-              placeholder="e.g., Ahmed Al-Shourbagy"
-            />
-          </div>
-
-          {/* Phone & Email */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-ink text-muted mb-2">
-                <Phone className="w-4 h-4 inline mr-2" />
-                Phone *
-              </label>
-              <input
-                type="tel"
-                required
-                aria-label="Phone" value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full px-4 py-2 bg-canvas bg-surface border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-ink"
-                placeholder="+20 10 12345678"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-ink text-muted mb-2">
-                <Mail className="w-4 h-4 inline mr-2" />
-                Email
-              </label>
-              <input
-                type="email"
-                aria-label="Email" value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-4 py-2 bg-canvas bg-surface border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-ink"
-                placeholder="email@example.com"
-              />
-            </div>
-          </div>
-
-          {/* Color Picker */}
-          <div>
-            <label className="block text-sm font-semibold text-ink text-muted mb-2">
-              <Palette className="w-4 h-4 inline mr-2" />
-              Brand Color
-            </label>
-            <div className="flex items-center gap-4">
-              <input
-                type="color"
-                aria-label="Brand color" value={formData.color}
-                onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                className="w-16 h-10 rounded-lg border border-line cursor-pointer"
-              />
+            <div className="relative">
               <input
                 type="text"
-                aria-label="Brand color" value={formData.color}
-                onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                className="flex-1 px-4 py-2 bg-canvas bg-surface border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-ink"
-                placeholder="#0b58bd"
+                required
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="أحمد محمد"
+                className="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm transition"
               />
+              <User className="w-4 h-4 text-zinc-500 absolute right-3.5 top-3" />
             </div>
-            <p className="text-xs text-muted mt-2">
-              Used for color coding in workspace
-            </p>
           </div>
 
-          {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-line">
+          <div>
+            <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+              الشركة أو المؤسسة
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={formData.company}
+                onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                placeholder="اسم الشركة (اختياري)"
+                className="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm transition"
+              />
+              <Building className="w-4 h-4 text-zinc-500 absolute right-3.5 top-3" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+                البريد الإلكتروني
+              </label>
+              <div className="relative">
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  placeholder="name@domain.com"
+                  dir="ltr"
+                  className="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm transition text-right"
+                />
+                <Mail className="w-4 h-4 text-zinc-500 absolute right-3.5 top-3" />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+                رقم الهاتف
+              </label>
+              <div className="relative">
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  placeholder="01000000000"
+                  dir="ltr"
+                  className="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm transition text-right"
+                />
+                <Phone className="w-4 h-4 text-zinc-500 absolute right-3.5 top-3" />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+              ملاحظات إضافية
+            </label>
+            <div className="relative">
+              <textarea
+                rows={3}
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                placeholder="أي ملاحظات تخص العميل..."
+                className="w-full p-3.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm transition resize-none"
+              />
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-800">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-ink text-muted hover:bg-canvas dark:hover:bg-surface rounded-lg transition-colors"
+              className="px-4 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/80 transition"
             >
-              Cancel
+              إلغاء
             </button>
-            {!client && onAddProject && <button type="submit" value="project" className="primary-button">Add Client &amp; Project</button>}
             <button
               type="submit"
-              className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors font-semibold"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] transition shadow-lg shadow-emerald-950/40"
             >
-              {client ? 'Update Client' : 'Add Client'}
+              <Check className="w-4 h-4" />
+              <span>{client ? 'حفظ التعديلات' : 'إضافة العميل'}</span>
             </button>
           </div>
         </form>
