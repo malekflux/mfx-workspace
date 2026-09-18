@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, Mail, Phone, Building, MapPin, Check, Plus } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import type { Client } from '../types';
 
@@ -31,14 +31,14 @@ export const ClientModal: React.FC<ClientModalProps> = ({
   useEffect(() => {
     if (client) {
       setFormData({
-        namePrimary: (client as any).namePrimary || (client as any).name || '',
-        nameSecondary: (client as any).nameSecondary || '',
-        companyPrimary: (client as any).companyPrimary || (client as any).company || '',
-        companySecondary: (client as any).companySecondary || '',
+        namePrimary: client.namePrimary || '',
+        nameSecondary: client.nameSecondary || '',
+        companyPrimary: client.companyPrimary || '',
+        companySecondary: client.companySecondary || '',
         email: client.email || '',
         phone: client.phone || '',
-        country: (client as any).country || 'Egypt',
-        city: (client as any).city || 'Cairo',
+        country: client.country || 'Egypt',
+        city: client.city || 'Cairo',
       });
     } else {
       setFormData({
@@ -60,190 +60,133 @@ export const ClientModal: React.FC<ClientModalProps> = ({
     e.preventDefault();
     if (!formData.namePrimary.trim()) return;
 
-    const payload: any = {
-      ...formData,
-      name: formData.namePrimary,
-      company: formData.companyPrimary,
-    };
-
     if (client) {
-      (updateClient as any)(client.id, payload);
+      updateClient(client.id, formData);
     } else {
-      (addClient as any)(payload);
+      addClient(formData);
     }
     onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
-      <div 
-        className="relative w-full max-w-lg bg-zinc-950 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
-        dir="rtl"
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-zinc-900/50">
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
-              <User className="w-5 h-5" />
-            </div>
-            <h3 className="text-base font-bold text-zinc-100">
-              {client ? 'تعديل بيانات العميل' : 'إضافة عميل جديد'}
-            </h3>
-          </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+      <div className="relative w-full max-w-lg bg-surface border border-border rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+          <h3 className="text-lg font-semibold text-text-primary">
+            {client ? 'Edit Client' : 'Add Client'}
+          </h3>
           <button
             type="button"
             onClick={onClose}
-            className="text-zinc-400 hover:text-zinc-100 p-1.5 rounded-lg hover:bg-zinc-800 transition-colors"
+            className="text-text-secondary hover:text-text-primary p-1 rounded-lg hover:bg-surface-hover transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Body Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1 text-right">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-1.5">
-                الاسم الأساسي <span className="text-emerald-500">*</span>
+              <label className="block text-xs font-medium text-text-secondary mb-1">
+                Name (Primary) *
               </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  required
-                  value={formData.namePrimary}
-                  onChange={(e) => setFormData({ ...formData, namePrimary: e.target.value })}
-                  placeholder="أحمد نحاس"
-                  className="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm transition"
-                />
-                <User className="w-4 h-4 text-zinc-500 absolute right-3.5 top-3" />
-              </div>
+              <input
+                type="text"
+                required
+                value={formData.namePrimary}
+                onChange={(e) => setFormData({ ...formData, namePrimary: e.target.value })}
+                className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm"
+              />
             </div>
-
             <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-1.5">
-                الاسم بالإنجليزية (اختياري)
+              <label className="block text-xs font-medium text-text-secondary mb-1">
+                Name (Secondary)
               </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={formData.nameSecondary}
-                  onChange={(e) => setFormData({ ...formData, nameSecondary: e.target.value })}
-                  placeholder="Ahmed Nahas"
-                  dir="ltr"
-                  className="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm transition text-right"
-                />
-                <User className="w-4 h-4 text-zinc-500 absolute right-3.5 top-3" />
-              </div>
+              <input
+                type="text"
+                value={formData.nameSecondary}
+                onChange={(e) => setFormData({ ...formData, nameSecondary: e.target.value })}
+                className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm"
+              />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-1.5">
-                الشركة أو العلامة
+              <label className="block text-xs font-medium text-text-secondary mb-1">
+                Company (Primary)
               </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={formData.companyPrimary}
-                  onChange={(e) => setFormData({ ...formData, companyPrimary: e.target.value })}
-                  placeholder="MFx Digital Solutions"
-                  className="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm transition"
-                />
-                <Building className="w-4 h-4 text-zinc-500 absolute right-3.5 top-3" />
-              </div>
+              <input
+                type="text"
+                value={formData.companyPrimary}
+                onChange={(e) => setFormData({ ...formData, companyPrimary: e.target.value })}
+                className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm"
+              />
             </div>
-
             <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-1.5">
-                الشركة بالإنجليزية
+              <label className="block text-xs font-medium text-text-secondary mb-1">
+                Company (Secondary)
               </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={formData.companySecondary}
-                  onChange={(e) => setFormData({ ...formData, companySecondary: e.target.value })}
-                  placeholder="MFx Agency"
-                  dir="ltr"
-                  className="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm transition text-right"
-                />
-                <Building className="w-4 h-4 text-zinc-500 absolute right-3.5 top-3" />
-              </div>
+              <input
+                type="text"
+                value={formData.companySecondary}
+                onChange={(e) => setFormData({ ...formData, companySecondary: e.target.value })}
+                className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm"
+              />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-1.5">
-                البريد الإلكتروني
+              <label className="block text-xs font-medium text-text-secondary mb-1">
+                Email
               </label>
-              <div className="relative">
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="client@mfx360.com"
-                  dir="ltr"
-                  className="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm transition text-right"
-                />
-                <Mail className="w-4 h-4 text-zinc-500 absolute right-3.5 top-3" />
-              </div>
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm"
+              />
             </div>
-
             <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-1.5">
-                رقم الهاتف
+              <label className="block text-xs font-medium text-text-secondary mb-1">
+                Phone
               </label>
-              <div className="relative">
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="+20 100 000 0000"
-                  dir="ltr"
-                  className="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm transition text-right"
-                />
-                <Phone className="w-4 h-4 text-zinc-500 absolute right-3.5 top-3" />
-              </div>
+              <input
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm"
+              />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-1.5">
-                الدولة
+              <label className="block text-xs font-medium text-text-secondary mb-1">
+                Country
               </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={formData.country}
-                  onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                  placeholder="مصر"
-                  className="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm transition"
-                />
-                <MapPin className="w-4 h-4 text-zinc-500 absolute right-3.5 top-3" />
-              </div>
+              <input
+                type="text"
+                value={formData.country}
+                onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm"
+              />
             </div>
-
             <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-1.5">
-                المدينة
+              <label className="block text-xs font-medium text-text-secondary mb-1">
+                City
               </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={formData.city}
-                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                  placeholder="القاهرة"
-                  className="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm transition"
-                />
-                <MapPin className="w-4 h-4 text-zinc-500 absolute right-3.5 top-3" />
-              </div>
+              <input
+                type="text"
+                value={formData.city}
+                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm"
+              />
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="flex items-center justify-between pt-4 border-t border-zinc-800">
+          <div className="flex items-center justify-between pt-4 border-t border-border">
             {client && onAddProject ? (
               <button
                 type="button"
@@ -251,10 +194,9 @@ export const ClientModal: React.FC<ClientModalProps> = ({
                   onClose();
                   onAddProject(client);
                 }}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-blue-400 hover:bg-blue-500/10 border border-blue-500/20 transition"
+                className="px-3 py-2 rounded-lg text-xs font-medium text-brand-primary hover:bg-brand-primary/10 transition-colors"
               >
-                <Plus className="w-3.5 h-3.5" />
-                <span>إضافة مشروع له</span>
+                + Add Project
               </button>
             ) : <div />}
 
@@ -262,16 +204,15 @@ export const ClientModal: React.FC<ClientModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/80 transition"
+                className="px-4 py-2 rounded-lg text-xs font-medium text-text-secondary hover:bg-surface-hover transition-colors"
               >
-                إلغاء
+                Cancel
               </button>
               <button
                 type="submit"
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] transition shadow-lg shadow-emerald-950/40"
+                className="px-4 py-2 rounded-lg text-xs font-medium text-white bg-brand-primary hover:bg-brand-primary/90 transition-colors"
               >
-                <Check className="w-4 h-4" />
-                <span>{client ? 'حفظ التعديلات' : 'إضافة العميل'}</span>
+                {client ? 'Save Changes' : 'Add Client'}
               </button>
             </div>
           </div>

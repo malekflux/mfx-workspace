@@ -1,111 +1,58 @@
 import React, { useState } from 'react';
-import { 
-  Plus, Edit2, Trash2, Check, X, Search, 
-  Layers, DollarSign, Tag, Sparkles
-} from 'lucide-react';
-
-interface DeliverableItem {
-  id: string;
-  titlePrimary: string;
-  titleSecondary?: string;
-}
-
-interface ServiceItem {
-  id: string;
-  namePrimary: string;
-  nameSecondary?: string;
-  category: string;
-  rate: number;
-  description: string;
-  deliverables?: DeliverableItem[];
-}
-
-const INITIAL_SERVICES: ServiceItem[] = [
-  {
-    id: 'srv-1',
-    namePrimary: 'الهوية البصرية والعلامة التجارية',
-    nameSecondary: 'Brand Identity & Visual System',
-    category: 'Branding',
-    rate: 1500,
-    description: 'تصميم الشعار، منظومة الألوان، الخطوط، ودليل استخدام الهوية الكامل.',
-    deliverables: [
-      { id: 'd-1', titlePrimary: 'الشعار الأساسي والفرعي بصيغ فيكتور' },
-      { id: 'd-2', titlePrimary: 'دليل الهوية الكامل (Brand Guidelines)' },
-      { id: 'd-3', titlePrimary: 'تطبيقات المطبوعات والتواصل الاجتماعي' },
-    ],
-  },
-  {
-    id: 'srv-2',
-    namePrimary: 'تصميم وتطوير واجهات المستخدم',
-    nameSecondary: 'UI/UX Design & Web Development',
-    category: 'Development',
-    rate: 2500,
-    description: 'تصميم وتطوير المنصات والمواقع باستخدام أحدث التقنيات وأفضل تجربة للمستخدم.',
-    deliverables: [
-      { id: 'd-4', titlePrimary: 'تصميم شاشات فيجما التفاعلية' },
-      { id: 'd-5', titlePrimary: 'تكويد متجاوب لكافة الشاشات' },
-      { id: 'd-6', titlePrimary: 'ربط لوحة التحكم والـ APIs' },
-    ],
-  },
-  {
-    id: 'srv-3',
-    namePrimary: 'إدارة الحملات الإعلانية والنمو',
-    nameSecondary: 'Performance Marketing & Ads',
-    category: 'Marketing',
-    rate: 1200,
-    description: 'إطلاق وتوجيه الحملات المدفوعة على منصات Meta وجوجل وتحسين معدلات التحويل.',
-    deliverables: [
-      { id: 'd-7', titlePrimary: 'إعداد واختبار الجماهير والإعلانات' },
-      { id: 'd-8', titlePrimary: 'تصاميم وكرييتف الإعلانات' },
-      { id: 'd-9', titlePrimary: 'تقارير دورية بالأداء والعائد الإعلاني' },
-    ],
-  },
-];
+import { Plus, Search, X } from 'lucide-react';
+import { services as initialServices } from '../data/services';
+import type { Service } from '../types';
 
 export const ServiceCatalog: React.FC = () => {
-  const [servicesList, setServicesList] = useState<ServiceItem[]>(INITIAL_SERVICES);
+  const [servicesList, setServicesList] = useState<Service[]>(initialServices);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  
-  // Modal state
+
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingService, setEditingService] = useState<ServiceItem | null>(null);
-  
+  const [editingService, setEditingService] = useState<Service | null>(null);
+
   const [formData, setFormData] = useState({
-    namePrimary: '',
-    nameSecondary: '',
-    category: '',
-    rate: '',
-    description: '',
-    deliverables: '',
+    code: '',
+    categoryPrimary: '',
+    categorySecondary: '',
+    titlePrimary: '',
+    titleSecondary: '',
+    descriptionPrimary: '',
+    descriptionSecondary: '',
+    basePrice: 0,
+    unit: 'project',
   });
 
-  const categories: string[] = Array.from(
-    new Set(servicesList.map((s) => s.category).filter(Boolean))
-  );
+  const categories = Array.from(new Set(servicesList.map((s) => s.categoryPrimary).filter(Boolean)));
 
   const handleOpenAdd = () => {
     setEditingService(null);
     setFormData({
-      namePrimary: '',
-      nameSecondary: '',
-      category: '',
-      rate: '',
-      description: '',
-      deliverables: '',
+      code: `SRV-${servicesList.length + 1}`,
+      categoryPrimary: 'General',
+      categorySecondary: 'General',
+      titlePrimary: '',
+      titleSecondary: '',
+      descriptionPrimary: '',
+      descriptionSecondary: '',
+      basePrice: 0,
+      unit: 'project',
     });
     setIsModalOpen(true);
   };
 
-  const handleOpenEdit = (service: ServiceItem) => {
+  const handleOpenEdit = (service: Service) => {
     setEditingService(service);
     setFormData({
-      namePrimary: service.namePrimary,
-      nameSecondary: service.nameSecondary || '',
-      category: service.category,
-      rate: String(service.rate || 0),
-      description: service.description,
-      deliverables: (service.deliverables || []).map((d) => d.titlePrimary).join('\n'),
+      code: service.code || '',
+      categoryPrimary: service.categoryPrimary || '',
+      categorySecondary: service.categorySecondary || '',
+      titlePrimary: service.titlePrimary || '',
+      titleSecondary: service.titleSecondary || '',
+      descriptionPrimary: service.descriptionPrimary || '',
+      descriptionSecondary: service.descriptionSecondary || '',
+      basePrice: service.basePrice || 0,
+      unit: service.unit || 'project',
     });
     setIsModalOpen(true);
   };
@@ -115,88 +62,81 @@ export const ServiceCatalog: React.FC = () => {
     setEditingService(null);
   };
 
-  const handleDelete = (id: string) => {
-    setServicesList((prev) => prev.filter((s) => s.id !== id));
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.namePrimary.trim()) return;
-
-    const deliverablesArray: DeliverableItem[] = formData.deliverables
-      .split('\n')
-      .map((d) => d.trim())
-      .filter(Boolean)
-      .map((item, idx) => ({
-        id: `del-${Date.now()}-${idx}`,
-        titlePrimary: item,
-      }));
-
-    const payload: ServiceItem = {
-      id: editingService ? editingService.id : `srv-${Date.now()}`,
-      namePrimary: formData.namePrimary.trim(),
-      nameSecondary: formData.nameSecondary.trim() || formData.namePrimary.trim(),
-      category: formData.category.trim() || 'General',
-      rate: Number(formData.rate) || 0,
-      description: formData.description.trim(),
-      deliverables: deliverablesArray,
-    };
+    if (!formData.titlePrimary.trim()) return;
 
     if (editingService) {
-      setServicesList((prev) => prev.map((s) => (s.id === editingService.id ? payload : s)));
+      setServicesList((prev) =>
+        prev.map((s) =>
+          s.id === editingService.id
+            ? {
+                ...s,
+                ...formData,
+              }
+            : s
+        )
+      );
     } else {
-      setServicesList((prev) => [payload, ...prev]);
+      const newService: Service = {
+        id: `srv-${Date.now()}`,
+        ...formData,
+        deliverables: [],
+        timelineEstimatePrimary: '2-4 weeks',
+        timelineEstimateSecondary: '2-4 weeks',
+      };
+      setServicesList((prev) => [newService, ...prev]);
     }
     handleCloseModal();
   };
 
   const filteredServices = servicesList.filter((s) => {
-    const sName = (s.namePrimary + ' ' + (s.nameSecondary || '')).toLowerCase();
-    const sDesc = s.description.toLowerCase();
-    const q = searchTerm.toLowerCase();
-
-    const matchesSearch = sName.includes(q) || sDesc.includes(q);
-    const matchesCategory = selectedCategory === 'all' || s.category === selectedCategory;
+    const term = searchTerm.toLowerCase();
+    const matchesSearch =
+      s.titlePrimary.toLowerCase().includes(term) ||
+      (s.titleSecondary && s.titleSecondary.toLowerCase().includes(term)) ||
+      s.descriptionPrimary.toLowerCase().includes(term);
+    const matchesCategory = selectedCategory === 'all' || s.categoryPrimary === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
   return (
-    <div className="space-y-6" dir="rtl">
+    <div className="space-y-6">
       {/* Top Bar */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-zinc-900/40 p-4 rounded-2xl border border-zinc-800/80">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-surface p-4 rounded-xl border border-border">
         <div className="flex-1 w-full sm:w-auto flex flex-col sm:flex-row items-center gap-3">
           <div className="relative w-full sm:w-72">
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="ابحث عن خدمة..."
-              className="w-full pl-3.5 pr-10 py-2 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition"
+              placeholder="Search services..."
+              className="w-full pl-9 pr-4 py-2 rounded-lg bg-surface-hover border border-border text-text-primary placeholder-text-secondary text-sm focus:outline-none focus:border-brand-primary"
             />
-            <Search className="w-4 h-4 text-zinc-500 absolute right-3.5 top-2.5" />
+            <Search className="w-4 h-4 text-text-secondary absolute left-3 top-2.5" />
           </div>
 
           <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
             <button
               type="button"
               onClick={() => setSelectedCategory('all')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
                 selectedCategory === 'all'
-                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
+                  ? 'bg-brand-primary text-white'
+                  : 'text-text-secondary hover:bg-surface-hover'
               }`}
             >
-              الكل
+              All
             </button>
             {categories.map((cat) => (
               <button
                 key={cat}
                 type="button"
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
                   selectedCategory === cat
-                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
+                    ? 'bg-brand-primary text-white'
+                    : 'text-text-secondary hover:bg-surface-hover'
                 }`}
               >
                 {cat}
@@ -208,229 +148,153 @@ export const ServiceCatalog: React.FC = () => {
         <button
           type="button"
           onClick={handleOpenAdd}
-          className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] transition shadow-lg shadow-emerald-950/40"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium text-white bg-brand-primary hover:bg-brand-primary/90 transition-colors"
         >
           <Plus className="w-4 h-4" />
-          <span>إضافة خدمة جديدة</span>
+          <span>Add Service</span>
         </button>
       </div>
 
-      {/* Services Grid */}
+      {/* Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredServices.map((service) => {
-          const rawDeliverables = service.deliverables || [];
-
-          return (
-            <div
-              key={service.id}
-              className="group relative bg-zinc-900/60 hover:bg-zinc-900/90 border border-zinc-800/90 hover:border-zinc-700/80 rounded-2xl p-5 flex flex-col justify-between transition-all duration-200 shadow-sm hover:shadow-md"
-            >
-              <div>
-                <div className="flex items-start justify-between gap-2 mb-3">
-                  <span className="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-zinc-800 text-zinc-300 border border-zinc-700/60">
-                    {service.category}
-                  </span>
-                  <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition">
-                    <button
-                      type="button"
-                      onClick={() => handleOpenEdit(service)}
-                      className="p-1.5 text-zinc-400 hover:text-emerald-400 hover:bg-zinc-800 rounded-lg transition"
-                      title="تعديل الخدمة"
-                    >
-                      <Edit2 className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(service.id)}
-                      className="p-1.5 text-zinc-400 hover:text-rose-400 hover:bg-zinc-800 rounded-lg transition"
-                      title="حذف الخدمة"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-
-                <h4 className="text-base font-bold text-zinc-100 mb-1.5 group-hover:text-emerald-400 transition-colors">
-                  {service.namePrimary}
-                </h4>
-                {service.nameSecondary && (
-                  <p className="text-[11px] text-zinc-500 font-mono mb-2" dir="ltr">
-                    {service.nameSecondary}
-                  </p>
-                )}
-                <p className="text-xs text-zinc-400 leading-relaxed line-clamp-2 mb-4">
-                  {service.description || 'لا يوجد وصف مضاف لهذه الخدمة.'}
-                </p>
-
-                {rawDeliverables.length > 0 && (
-                  <div className="space-y-1 mb-4 pt-2 border-t border-zinc-800/60">
-                    {rawDeliverables.slice(0, 3).map((item) => (
-                      <div key={item.id} className="flex items-center gap-1.5 text-[11px] text-zinc-400">
-                        <Sparkles className="w-3 h-3 text-emerald-500/70 shrink-0" />
-                        <span className="truncate">{item.titlePrimary}</span>
-                      </div>
-                    ))}
-                    {rawDeliverables.length > 3 && (
-                      <span className="text-[10px] text-zinc-500 block pt-0.5">
-                        +{rawDeliverables.length - 3} عناصر إضافية
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <div className="pt-3 border-t border-zinc-800/80 flex items-center justify-between mt-auto">
-                <span className="text-xs text-zinc-500">السعر المقترح</span>
-                <span className="text-base font-extrabold text-emerald-400" dir="ltr">
-                  ${service.rate.toLocaleString()}
+        {filteredServices.map((service) => (
+          <div
+            key={service.id}
+            className="bg-surface border border-border rounded-xl p-5 flex flex-col justify-between hover:border-brand-primary/50 transition-colors"
+          >
+            <div>
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-surface-hover text-text-secondary border border-border">
+                  {service.categoryPrimary}
+                </span>
+                <span className="text-[11px] font-mono text-text-secondary">
+                  {service.code}
                 </span>
               </div>
+
+              <h4 className="text-base font-semibold text-text-primary mb-1">
+                {service.titlePrimary}
+              </h4>
+              {service.titleSecondary && (
+                <p className="text-xs text-text-secondary mb-2">
+                  {service.titleSecondary}
+                </p>
+              )}
+              <p className="text-xs text-text-secondary line-clamp-3 mb-4">
+                {service.descriptionPrimary}
+              </p>
             </div>
-          );
-        })}
+
+            <div className="pt-3 border-t border-border flex items-center justify-between mt-auto">
+              <span className="text-sm font-bold text-brand-primary">
+                ${service.basePrice.toLocaleString()}
+              </span>
+              <button
+                type="button"
+                onClick={() => handleOpenEdit(service)}
+                className="px-3 py-1 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors"
+              >
+                Edit
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
 
-      {filteredServices.length === 0 && (
-        <div className="p-12 text-center border border-dashed border-zinc-800 rounded-2xl bg-zinc-950/40">
-          <Layers className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
-          <p className="text-sm font-semibold text-zinc-400">لا توجد خدمات مطابقة</p>
-          <p className="text-xs text-zinc-600 mt-1">جرّب البحث بكلمات أخرى أو أضف خدمة جديدة الآن.</p>
-        </div>
-      )}
-
-      {/* Add / Edit Service Modal */}
+      {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
-          <div 
-            className="relative w-full max-w-lg bg-zinc-950 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
-            dir="rtl"
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-zinc-900/50">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
-                  <Layers className="w-5 h-5" />
-                </div>
-                <h3 className="text-base font-bold text-zinc-100">
-                  {editingService ? 'تعديل الخدمة' : 'إضافة خدمة جديدة'}
-                </h3>
-              </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="relative w-full max-w-lg bg-surface border border-border rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+              <h3 className="text-lg font-semibold text-text-primary">
+                {editingService ? 'Edit Service' : 'Add Service'}
+              </h3>
               <button
                 type="button"
                 onClick={handleCloseModal}
-                className="text-zinc-400 hover:text-zinc-100 p-1.5 rounded-lg hover:bg-zinc-800 transition-colors"
+                className="text-text-secondary hover:text-text-primary p-1 rounded-lg hover:bg-surface-hover transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Body Form */}
-            <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1 text-right">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-1.5">
-                    اسم الخدمة بالعربية <span className="text-emerald-500">*</span>
+                  <label className="block text-xs font-medium text-text-secondary mb-1">
+                    Title (Primary) *
                   </label>
                   <input
                     type="text"
                     required
-                    value={formData.namePrimary}
-                    onChange={(e) => setFormData({ ...formData, namePrimary: e.target.value })}
-                    placeholder="مثال: إدارة الحملات الإعلانية"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm transition"
+                    value={formData.titlePrimary}
+                    onChange={(e) => setFormData({ ...formData, titlePrimary: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm"
                   />
                 </div>
-
                 <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-1.5">
-                    اسم الخدمة بالإنجليزية
+                  <label className="block text-xs font-medium text-text-secondary mb-1">
+                    Title (Secondary)
                   </label>
                   <input
                     type="text"
-                    value={formData.nameSecondary}
-                    onChange={(e) => setFormData({ ...formData, nameSecondary: e.target.value })}
-                    placeholder="Media Buying & Ads"
-                    dir="ltr"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm transition text-right"
+                    value={formData.titleSecondary}
+                    onChange={(e) => setFormData({ ...formData, titleSecondary: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-1.5">
-                    التصنيف (Category)
+                  <label className="block text-xs font-medium text-text-secondary mb-1">
+                    Category (Primary)
                   </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={formData.category}
-                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                      placeholder="Marketing, Branding, Web"
-                      className="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm transition"
-                    />
-                    <Tag className="w-4 h-4 text-zinc-500 absolute right-3.5 top-3" />
-                  </div>
+                  <input
+                    type="text"
+                    value={formData.categoryPrimary}
+                    onChange={(e) => setFormData({ ...formData, categoryPrimary: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm"
+                  />
                 </div>
-
                 <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-1.5">
-                    السعر الافتراضي ($)
+                  <label className="block text-xs font-medium text-text-secondary mb-1">
+                    Base Price ($)
                   </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      value={formData.rate}
-                      onChange={(e) => setFormData({ ...formData, rate: e.target.value })}
-                      placeholder="0.00"
-                      className="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm transition"
-                    />
-                    <DollarSign className="w-4 h-4 text-zinc-500 absolute right-3.5 top-3" />
-                  </div>
+                  <input
+                    type="number"
+                    value={formData.basePrice}
+                    onChange={(e) => setFormData({ ...formData, basePrice: Number(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm"
+                  />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1.5">
-                  وصف الخدمة
+                <label className="block text-xs font-medium text-text-secondary mb-1">
+                  Description (Primary)
                 </label>
                 <textarea
                   rows={3}
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="اكتب شرحاً مختصراً عما تقدمه هذه الخدمة..."
-                  className="w-full p-3.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm transition resize-none"
+                  value={formData.descriptionPrimary}
+                  onChange={(e) => setFormData({ ...formData, descriptionPrimary: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm resize-none"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1.5">
-                  المخرجات والمسلمات (عنصر في كل سطر)
-                </label>
-                <textarea
-                  rows={3}
-                  value={formData.deliverables}
-                  onChange={(e) => setFormData({ ...formData, deliverables: e.target.value })}
-                  placeholder="إعداد الحملات على Meta Ads&#10;تصميم الكرييتف والفيديو&#10;تقرير شهري بالأداء و ROAS"
-                  className="w-full p-3.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm transition resize-none"
-                />
-              </div>
-
-              {/* Footer */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-800">
+              <div className="flex items-center justify-end gap-2 pt-4 border-t border-border">
                 <button
                   type="button"
                   onClick={handleCloseModal}
-                  className="px-4 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/80 transition"
+                  className="px-4 py-2 rounded-lg text-xs font-medium text-text-secondary hover:bg-surface-hover transition-colors"
                 >
-                  إلغاء
+                  Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] transition shadow-lg shadow-emerald-950/40"
+                  className="px-4 py-2 rounded-lg text-xs font-medium text-white bg-brand-primary hover:bg-brand-primary/90 transition-colors"
                 >
-                  <Check className="w-4 h-4" />
-                  <span>{editingService ? 'حفظ التعديلات' : 'إضافة الخدمة'}</span>
+                  {editingService ? 'Save Changes' : 'Add Service'}
                 </button>
               </div>
             </form>
