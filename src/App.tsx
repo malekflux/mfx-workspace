@@ -6,17 +6,11 @@ import { ThemeToggle } from './components/ThemeToggle';
 import { AdvancedReports } from './components/AdvancedReports';
 import { GoogleSheetsSync } from './components/GoogleSheetsSync';
 
-
-
 type View = 'dashboard' | 'workspace' | 'reports' | 'settings';
 
 function App() {
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth >= 1024);
-
-
-  // Seed initial data
-
 
   const navigation = [
     { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
@@ -60,14 +54,14 @@ function App() {
     <div className="min-h-screen bg-canvas transition-colors">
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full bg-surface bg-surface border-r border-line transition-all duration-300 z-40 ${
+        className={`fixed top-0 left-0 h-full bg-surface border-r border-line transition-all duration-300 z-40 ${
           isSidebarOpen ? 'w-64' : 'hidden lg:block lg:w-20'
         }`}
       >
         <div className="h-full flex flex-col">
           {/* Logo */}
           <div className="h-16 flex items-center justify-between px-6 border-b border-line">
-            {isSidebarOpen && (8:44 PM 9/18/2026
+            {isSidebarOpen && (
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary-light rounded-lg flex items-center justify-center">
                   <img src="/mfx-logo.png" alt="MFx" className="w-7 object-contain" />
@@ -78,7 +72,7 @@ function App() {
             <button
               aria-label="Toggle navigation"
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-2 hover:bg-canvas dark:hover:bg-surface rounded-lg transition-colors lg:hidden"
+              className="p-2 hover:bg-canvas rounded-lg transition-colors lg:hidden"
             >
               {isSidebarOpen ? (
                 <X className="w-5 h-5 text-muted" />
@@ -102,7 +96,7 @@ function App() {
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
                     isActive
                       ? 'bg-primary text-white shadow-lg shadow-primary/25'
-                      : 'text-muted hover:bg-canvas dark:hover:bg-surface'
+                      : 'text-muted hover:bg-canvas'
                   } ${!isSidebarOpen && 'lg:justify-center'}`}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />
@@ -140,12 +134,13 @@ function App() {
           <button
             aria-label="Toggle navigation"
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="p-2 hover:bg-canvas dark:hover:bg-surface rounded-lg transition-colors"
+            className="p-2 hover:bg-canvas rounded-lg transition-colors"
           >
             <Menu className="w-5 h-5 text-muted" />
           </button>
 
-          <div className="flex items-center gap-4"><img src="/mfx-logo.png" alt="MFx" className="brand-logo" />
+          <div className="flex items-center gap-4">
+            <img src="/mfx-logo.png" alt="MFx" className="brand-logo" />
             <div className="text-right">
               <p className="text-sm font-semibold text-ink">MFx Digital Solutions</p>
               <p className="text-xs text-muted">www.mfx360.com</p>
