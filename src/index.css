@@ -314,3 +314,97 @@ label {
 .dark .brand-logo {
   filter: none;
 }
+
+/* Document Studio Modal */
+.studio-shell {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-line);
+  border-radius: 1.25rem;
+  width: 95vw;
+  max-width: 1200px;
+  height: 92vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.studio-toolbar {
+  padding: 1.25rem 1.75rem;
+  border-bottom: 1px solid var(--border-line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+  background-color: var(--bg-surface);
+}
+
+.studio-toolbar h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-ink);
+}
+
+.studio-toolbar p {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* ضبط محاذاة القائمة المنسدلة للغة مع الأزرار */
+.studio-toolbar label {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  margin: 0 !important;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.studio-toolbar select {
+  width: auto !important;
+  min-width: 110px;
+  padding: 0.45rem 0.85rem !important;
+}
+
+/* صندوق إدخال شروط العقد */
+.studio-terms {
+  padding: 1rem 1.75rem;
+  background-color: var(--bg-canvas);
+  border-bottom: 1px solid var(--border-line);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-ink);
+}
+
+.studio-terms textarea {
+  width: 100%;
+  min-height: 70px;
+  resize: vertical;
+}
+
+/* شريط التنبيه السفلي */
+.studio-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  padding: 0.5rem 1.75rem;
+  background-color: var(--bg-surface);
+  border-bottom: 1px solid var(--border-line);
+}
+
+/* ورقة العمل A4 */
+.studio-shell iframe {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  border: none;
+  background-color: #0b0f17;
+}
+
+.dark .studio-shell iframe {
+  background-color: #030712;
+}
