@@ -1,15 +1,337 @@
-import { useState } from 'react';
-import { useDialog } from '../hooks/useDialog';
+import React, { useState } from 'react';
+import { 
+  Plus, Edit2, Trash2, Check, X, Search, 
+  Layers, DollarSign, Tag, Sparkles
+} from 'lucide-react';
 import { useStore } from '../store/useStore';
-import type { Service } from '../types';
-export function ServiceCatalog() {
-  const {servicesCatalog,addServiceToCatalog,updateServiceInCatalog} = useStore();
-  const [editing,setEditing] = useState<Service | null>(null);
-  const [open,setOpen] = useState(false);
-  return <section className="panel"><div className="section-heading"><div><h2>Service catalog</h2><p>Reusable services. Project prices remain independent.</p></div><button className="primary-button" onClick={()=>{setEditing(null);setOpen(true);}}>New Service</button></div><details className="catalog-details"><summary>Browse {servicesCatalog.length} services</summary><div className="catalog-grid">{servicesCatalog.map(service=><button className="catalog-item" key={service.id} onClick={()=>{setEditing(service);setOpen(true);}}><span>{service.name}</span><small dir="auto">{service.nameAr || 'Add Arabic wording'}</small><strong>{service.basePrice.toLocaleString()} <small>base price</small></strong></button>)}</div></details>{open&&<ServiceForm key={editing?.id || 'new'} service={editing} close={()=>setOpen(false)} save={s=>{if(editing) updateServiceInCatalog(s.id,s);else addServiceToCatalog(s);setOpen(false);}} />}</section>;
-}
-function ServiceForm({service,save,close}:{service:Service|null;save:(s:Service)=>void;close:()=>void}) {
-  const [error,setError]=useState('');
-  const dialogRef=useDialog(close);
-  return <div ref={dialogRef} className="studio-overlay" role="dialog" aria-modal="true" aria-label="Service form"><form className="service-form panel" onSubmit={e=>{e.preventDefault();const d = new FormData(e.currentTarget);const name=String(d.get('name')).trim();const price=Number(d.get('price'));if(!name || !Number.isFinite(price)||price<0){setError('Enter a service name and a valid non-negative price.');return;}save({id:service?.id || crypto.randomUUID(),name,nameAr:String(d.get('nameAr')).trim(),description:String(d.get('description')).trim(),descriptionAr:String(d.get('descriptionAr')).trim(),subServices:String(d.get('deliverables')).split('\n').map(s=>s.trim()).filter(Boolean),subServicesAr:String(d.get('deliverablesAr')).split('\n').map(s=>s.trim()).filter(Boolean),basePrice:price,isRecurring:d.has('recurring'),isVariable:d.has('variable')});}}><div className="section-heading"><h2>{service?'Edit Service':'New Service'}</h2><button type="button" className="secondary-button" onClick={close}>Close</button></div>{error&&<p role="alert">{error}</p>}<div className="form-columns"><label>Service name (English)<input name="name" required defaultValue={service?.name}/></label><label>اسم الخدمة بالعربية<input name="nameAr" dir="rtl" defaultValue={service?.nameAr}/></label><label>Description (English)<textarea name="description" defaultValue={service?.description}/></label><label>الوصف بالعربية<textarea name="descriptionAr" dir="rtl" defaultValue={service?.descriptionAr}/></label><label>Deliverables — one per line<textarea name="deliverables" rows={4} defaultValue={service?.subServices?.join('\n')}/></label><label>المخرجات — بند في كل سطر<textarea name="deliverablesAr" dir="rtl" rows={4} defaultValue={service?.subServicesAr?.join('\n')}/></label></div><label>Base price (in the project's selected currency)<input name="price" type="number" min="0" step="0.01" required defaultValue={service?.basePrice ?? 0}/></label><div className="flex gap-5"><label><input name="recurring" type="checkbox" defaultChecked={service?.isRecurring}/> Recurring</label><label><input name="variable" type="checkbox" defaultChecked={service?.isVariable}/> Variable</label></div><button className="primary-button">Save Service</button></form></div>;
-}
+import { Service } from '../types';
+
+export const ServiceCatalog: React.FC = () => {
+  const { services, addService, updateService, deleteService } = useStore();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  
+  // Modal state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingService, setEditingService] = useState<Service | null>(null);
+  
+  const [formData, setFormData] = useState({
+    name: '',
+    category: '',
+    price: '',
+    description: '',
+    deliverables: '',
+  });
+
+  const categories = Array.from(new Set(services.map((s) => s.category).filter(Boolean)));
+
+  const handleOpenAdd = () => {
+    setEditingService(null);
+    setFormData({
+      name: '',
+      category: '',
+      price: '',
+      description: '',
+      deliverables: '',
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEdit = (service: Service) => {
+    setEditingService(service);
+    setFormData({
+      name: service.name,
+      category: service.category || '',
+      price: String(service.price || 0),
+      description: service.description || '',
+      deliverables: Array.isArray(service.deliverables) ? service.deliverables.join('\n') : '',
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingService(null);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name.trim()) return;
+
+    const payload = {
+      name: formData.name.trim(),
+      category: formData.category.trim() || 'General',
+      price: Number(formData.price) || 0,
+      description: formData.description.trim(),
+      deliverables: formData.deliverables
+        .split('\n')
+        .map((d) => d.trim())
+        .filter(Boolean),
+    };
+
+    if (editingService) {
+      updateService(editingService.id, payload);
+    } else {
+      addService(payload);
+    }
+    handleCloseModal();
+  };
+
+  const filteredServices = services.filter((s) => {
+    const matchesSearch = 
+      s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'all' || s.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  return (
+    <div className="space-y-6" dir="rtl">
+      {/* Top Bar */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-zinc-900/40 p-4 rounded-2xl border border-zinc-800/80">
+        <div className="flex-1 w-full sm:w-auto flex flex-col sm:flex-row items-center gap-3">
+          <div className="relative w-full sm:w-72">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="ابحث عن خدمة..."
+              className="w-full pl-3.5 pr-10 py-2 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition"
+            />
+            <Search className="w-4 h-4 text-zinc-500 absolute right-3.5 top-2.5" />
+          </div>
+
+          <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
+            <button
+              onClick={() => setSelectedCategory('all')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap ${
+                selectedCategory === 'all'
+                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
+              }`}
+            >
+              الكل
+            </button>
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap ${
+                  selectedCategory === cat
+                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <button
+          onClick={handleOpenAdd}
+          className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] transition shadow-lg shadow-emerald-950/40"
+        >
+          <Plus className="w-4 h-4" />
+          <span>إضافة خدمة جديدة</span>
+        </button>
+      </div>
+
+      {/* Services Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filteredServices.map((service) => (
+          <div
+            key={service.id}
+            className="group relative bg-zinc-900/60 hover:bg-zinc-900/90 border border-zinc-800/90 hover:border-zinc-700/80 rounded-2xl p-5 flex flex-col justify-between transition-all duration-200 shadow-sm hover:shadow-md"
+          >
+            <div>
+              <div className="flex items-start justify-between gap-2 mb-3">
+                <span className="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-zinc-800 text-zinc-300 border border-zinc-700/60">
+                  {service.category || 'عام'}
+                </span>
+                <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition">
+                  <button
+                    onClick={() => handleOpenEdit(service)}
+                    className="p-1.5 text-zinc-400 hover:text-emerald-400 hover:bg-zinc-800 rounded-lg transition"
+                    title="تعديل الخدمة"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => deleteService(service.id)}
+                    className="p-1.5 text-zinc-400 hover:text-rose-400 hover:bg-zinc-800 rounded-lg transition"
+                    title="حذف الخدمة"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              <h4 className="text-base font-bold text-zinc-100 mb-1.5 group-hover:text-emerald-400 transition-colors">
+                {service.name}
+              </h4>
+              <p className="text-xs text-zinc-400 leading-relaxed line-clamp-2 mb-4">
+                {service.description || 'لا يوجد وصف مضاف لهذه الخدمة.'}
+              </p>
+
+              {service.deliverables && service.deliverables.length > 0 && (
+                <div className="space-y-1 mb-4 pt-2 border-t border-zinc-800/60">
+                  {service.deliverables.slice(0, 3).map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-1.5 text-[11px] text-zinc-400">
+                      <Sparkles className="w-3 h-3 text-emerald-500/70 shrink-0" />
+                      <span className="truncate">{item}</span>
+                    </div>
+                  ))}
+                  {service.deliverables.length > 3 && (
+                    <span className="text-[10px] text-zinc-500 block pt-0.5">
+                      +{service.deliverables.length - 3} عناصر إضافية
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="pt-3 border-t border-zinc-800/80 flex items-center justify-between mt-auto">
+              <span className="text-xs text-zinc-500">السعر المقترح</span>
+              <span className="text-base font-extrabold text-emerald-400" dir="ltr">
+                ${Number(service.price).toLocaleString()}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {filteredServices.length === 0 && (
+        <div className="p-12 text-center border border-dashed border-zinc-800 rounded-2xl bg-zinc-950/40">
+          <Layers className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
+          <p className="text-sm font-semibold text-zinc-400">لا توجد خدمات مطابقة</p>
+          <p className="text-xs text-zinc-600 mt-1">جرّب البحث بكلمات أخرى أو أضف خدمة جديدة الآن.</p>
+        </div>
+      )}
+
+      {/* Add / Edit Service Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
+          <div 
+            className="relative w-full max-w-lg bg-zinc-950 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            dir="rtl"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-zinc-900/50">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
+                  <Layers className="w-5 h-5" />
+                </div>
+                <h3 className="text-base font-bold text-zinc-100">
+                  {editingService ? 'تعديل الخدمة' : 'إضافة خدمة جديدة'}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={handleCloseModal}
+                className="text-zinc-400 hover:text-zinc-100 p-1.5 rounded-lg hover:bg-zinc-800 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body Form */}
+            <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1 text-right">
+              <div>
+                <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+                  اسم الخدمة <span className="text-emerald-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="مثال: تصميم وتطوير واجهات المستخدم"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm transition"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+                    التصنيف (Category)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={formData.category}
+                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                      placeholder="UI/UX, Marketing, Development"
+                      className="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm transition"
+                    />
+                    <Tag className="w-4 h-4 text-zinc-500 absolute right-3.5 top-3" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+                    السعر الافتراضي ($)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      value={formData.price}
+                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                      placeholder="0.00"
+                      className="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm transition"
+                    />
+                    <DollarSign className="w-4 h-4 text-zinc-500 absolute right-3.5 top-3" />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+                  وصف الخدمة
+                </label>
+                <textarea
+                  rows={3}
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="اكتب شرحاً مختصراً عما تقدمه هذه الخدمة..."
+                  className="w-full p-3.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm transition resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+                  المخرجات والمسلمات (عنصر في كل سطر)
+                </label>
+                <textarea
+                  rows={3}
+                  value={formData.deliverables}
+                  onChange={(e) => setFormData({ ...formData, deliverables: e.target.value })}
+                  placeholder="ملفات فيجما كاملة&#10;تصميم متجاوب لكافة الشاشات&#10;مكتبة المكونات والـ Style Guide"
+                  className="w-full p-3.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm transition resize-none"
+                />
+              </div>
+
+              {/* Footer */}
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-800">
+                <button
+                  type="button"
+                  onClick={handleCloseModal}
+                  className="px-4 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/80 transition"
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="submit"
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] transition shadow-lg shadow-emerald-950/40"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>{editingService ? 'حفظ التعديلات' : 'إضافة الخدمة'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
