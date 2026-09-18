@@ -60,14 +60,14 @@ function App() {
     <div className="min-h-screen bg-canvas transition-colors">
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full bg-surface bg-surface border-r border-line border-line transition-all duration-300 z-40 ${
+        className={`fixed top-0 left-0 h-full bg-surface bg-surface border-r border-line transition-all duration-300 z-40 ${
           isSidebarOpen ? 'w-64' : 'hidden lg:block lg:w-20'
         }`}
       >
         <div className="h-full flex flex-col">
           {/* Logo */}
           <div className="h-16 flex items-center justify-between px-6 border-b border-line">
-            {isSidebarOpen && (
+            {isSidebarOpen && (8:44 PM 9/18/2026
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary-light rounded-lg flex items-center justify-center">
                   <img src="/mfx-logo.png" alt="MFx" className="w-7 object-contain" />
@@ -102,7 +102,7 @@ function App() {
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
                     isActive
                       ? 'bg-primary text-white shadow-lg shadow-primary/25'
-                      : 'text-muted text-muted hover:bg-canvas dark:hover:bg-surface'
+                      : 'text-muted hover:bg-canvas dark:hover:bg-surface'
                   } ${!isSidebarOpen && 'lg:justify-center'}`}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />
