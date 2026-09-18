@@ -3,19 +3,73 @@ import {
   Plus, Edit2, Trash2, Check, X, Search, 
   Layers, DollarSign, Tag, Sparkles
 } from 'lucide-react';
-import { defaultServices } from '../data/services';
-import type { Service } from '../types';
+
+interface DeliverableItem {
+  id: string;
+  titlePrimary: string;
+  titleSecondary?: string;
+}
+
+interface ServiceItem {
+  id: string;
+  namePrimary: string;
+  nameSecondary?: string;
+  category: string;
+  rate: number;
+  description: string;
+  deliverables?: DeliverableItem[];
+}
+
+const INITIAL_SERVICES: ServiceItem[] = [
+  {
+    id: 'srv-1',
+    namePrimary: 'الهوية البصرية والعلامة التجارية',
+    nameSecondary: 'Brand Identity & Visual System',
+    category: 'Branding',
+    rate: 1500,
+    description: 'تصميم الشعار، منظومة الألوان، الخطوط، ودليل استخدام الهوية الكامل.',
+    deliverables: [
+      { id: 'd-1', titlePrimary: 'الشعار الأساسي والفرعي بصيغ فيكتور' },
+      { id: 'd-2', titlePrimary: 'دليل الهوية الكامل (Brand Guidelines)' },
+      { id: 'd-3', titlePrimary: 'تطبيقات المطبوعات والتواصل الاجتماعي' },
+    ],
+  },
+  {
+    id: 'srv-2',
+    namePrimary: 'تصميم وتطوير واجهات المستخدم',
+    nameSecondary: 'UI/UX Design & Web Development',
+    category: 'Development',
+    rate: 2500,
+    description: 'تصميم وتطوير المنصات والمواقع باستخدام أحدث التقنيات وأفضل تجربة للمستخدم.',
+    deliverables: [
+      { id: 'd-4', titlePrimary: 'تصميم شاشات فيجما التفاعلية' },
+      { id: 'd-5', titlePrimary: 'تكويد متجاوب لكافة الشاشات' },
+      { id: 'd-6', titlePrimary: 'ربط لوحة التحكم والـ APIs' },
+    ],
+  },
+  {
+    id: 'srv-3',
+    namePrimary: 'إدارة الحملات الإعلانية والنمو',
+    nameSecondary: 'Performance Marketing & Ads',
+    category: 'Marketing',
+    rate: 1200,
+    description: 'إطلاق وتوجيه الحملات المدفوعة على منصات Meta وجوجل وتحسين معدلات التحويل.',
+    deliverables: [
+      { id: 'd-7', titlePrimary: 'إعداد واختبار الجماهير والإعلانات' },
+      { id: 'd-8', titlePrimary: 'تصاميم وكرييتف الإعلانات' },
+      { id: 'd-9', titlePrimary: 'تقارير دورية بالأداء والعائد الإعلاني' },
+    ],
+  },
+];
 
 export const ServiceCatalog: React.FC = () => {
-  const [servicesList, setServicesList] = useState<any[]>(() => {
-    return Array.isArray(defaultServices) ? defaultServices : [];
-  });
+  const [servicesList, setServicesList] = useState<ServiceItem[]>(INITIAL_SERVICES);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingService, setEditingService] = useState<any | null>(null);
+  const [editingService, setEditingService] = useState<ServiceItem | null>(null);
   
   const [formData, setFormData] = useState({
     namePrimary: '',
@@ -27,11 +81,7 @@ export const ServiceCatalog: React.FC = () => {
   });
 
   const categories: string[] = Array.from(
-    new Set(
-      servicesList
-        .map((s: any) => s.category || s.categoryPrimary || '')
-        .filter((c: string) => Boolean(c))
-    )
+    new Set(servicesList.map((s) => s.category).filter(Boolean))
   );
 
   const handleOpenAdd = () => {
@@ -47,17 +97,15 @@ export const ServiceCatalog: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleOpenEdit = (service: any) => {
+  const handleOpenEdit = (service: ServiceItem) => {
     setEditingService(service);
     setFormData({
-      namePrimary: service.namePrimary || service.name || '',
+      namePrimary: service.namePrimary,
       nameSecondary: service.nameSecondary || '',
-      category: service.category || service.categoryPrimary || '',
-      rate: String(service.rate || service.price || service.basePrice || 0),
-      description: service.descriptionPrimary || service.description || '',
-      deliverables: Array.isArray(service.deliverables) 
-        ? service.deliverables.map((d: any) => typeof d === 'string' ? d : (d.titlePrimary || d.title || '')).join('\n') 
-        : '',
+      category: service.category,
+      rate: String(service.rate || 0),
+      description: service.description,
+      deliverables: (service.deliverables || []).map((d) => d.titlePrimary).join('\n'),
     });
     setIsModalOpen(true);
   };
@@ -67,7 +115,7 @@ export const ServiceCatalog: React.FC = () => {
     setEditingService(null);
   };
 
-  const handleDelete = (id: string | number) => {
+  const handleDelete = (id: string) => {
     setServicesList((prev) => prev.filter((s) => s.id !== id));
   };
 
@@ -75,27 +123,21 @@ export const ServiceCatalog: React.FC = () => {
     e.preventDefault();
     if (!formData.namePrimary.trim()) return;
 
-    const deliverablesArray = formData.deliverables
+    const deliverablesArray: DeliverableItem[] = formData.deliverables
       .split('\n')
       .map((d) => d.trim())
       .filter(Boolean)
       .map((item, idx) => ({
         id: `del-${Date.now()}-${idx}`,
         titlePrimary: item,
-        titleSecondary: item,
       }));
 
-    const payload: any = {
+    const payload: ServiceItem = {
       id: editingService ? editingService.id : `srv-${Date.now()}`,
       namePrimary: formData.namePrimary.trim(),
       nameSecondary: formData.nameSecondary.trim() || formData.namePrimary.trim(),
-      name: formData.namePrimary.trim(),
       category: formData.category.trim() || 'General',
-      categoryPrimary: formData.category.trim() || 'General',
       rate: Number(formData.rate) || 0,
-      price: Number(formData.rate) || 0,
-      basePrice: Number(formData.rate) || 0,
-      descriptionPrimary: formData.description.trim(),
       description: formData.description.trim(),
       deliverables: deliverablesArray,
     };
@@ -108,14 +150,13 @@ export const ServiceCatalog: React.FC = () => {
     handleCloseModal();
   };
 
-  const filteredServices = servicesList.filter((s: any) => {
-    const sName = (s.namePrimary || s.name || '').toLowerCase();
-    const sDesc = (s.descriptionPrimary || s.description || '').toLowerCase();
-    const sCat = s.category || s.categoryPrimary || '';
+  const filteredServices = servicesList.filter((s) => {
+    const sName = (s.namePrimary + ' ' + (s.nameSecondary || '')).toLowerCase();
+    const sDesc = s.description.toLowerCase();
     const q = searchTerm.toLowerCase();
 
     const matchesSearch = sName.includes(q) || sDesc.includes(q);
-    const matchesCategory = selectedCategory === 'all' || sCat === selectedCategory;
+    const matchesCategory = selectedCategory === 'all' || s.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -176,22 +217,18 @@ export const ServiceCatalog: React.FC = () => {
 
       {/* Services Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredServices.map((service: any) => {
-          const serviceName = service.namePrimary || service.name || 'خدمة';
-          const serviceCat = service.category || service.categoryPrimary || 'عام';
-          const serviceDesc = service.descriptionPrimary || service.description || '';
-          const servicePrice = service.rate || service.price || service.basePrice || 0;
-          const rawDeliverables = Array.isArray(service.deliverables) ? service.deliverables : [];
+        {filteredServices.map((service) => {
+          const rawDeliverables = service.deliverables || [];
 
           return (
             <div
-              key={String(service.id)}
+              key={service.id}
               className="group relative bg-zinc-900/60 hover:bg-zinc-900/90 border border-zinc-800/90 hover:border-zinc-700/80 rounded-2xl p-5 flex flex-col justify-between transition-all duration-200 shadow-sm hover:shadow-md"
             >
               <div>
                 <div className="flex items-start justify-between gap-2 mb-3">
                   <span className="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-zinc-800 text-zinc-300 border border-zinc-700/60">
-                    {serviceCat}
+                    {service.category}
                   </span>
                   <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition">
                     <button
@@ -214,23 +251,25 @@ export const ServiceCatalog: React.FC = () => {
                 </div>
 
                 <h4 className="text-base font-bold text-zinc-100 mb-1.5 group-hover:text-emerald-400 transition-colors">
-                  {serviceName}
+                  {service.namePrimary}
                 </h4>
+                {service.nameSecondary && (
+                  <p className="text-[11px] text-zinc-500 font-mono mb-2" dir="ltr">
+                    {service.nameSecondary}
+                  </p>
+                )}
                 <p className="text-xs text-zinc-400 leading-relaxed line-clamp-2 mb-4">
-                  {serviceDesc || 'لا يوجد وصف مضاف لهذه الخدمة.'}
+                  {service.description || 'لا يوجد وصف مضاف لهذه الخدمة.'}
                 </p>
 
                 {rawDeliverables.length > 0 && (
                   <div className="space-y-1 mb-4 pt-2 border-t border-zinc-800/60">
-                    {rawDeliverables.slice(0, 3).map((item: any, idx: number) => {
-                      const text = typeof item === 'string' ? item : (item.titlePrimary || item.title || '');
-                      return (
-                        <div key={idx} className="flex items-center gap-1.5 text-[11px] text-zinc-400">
-                          <Sparkles className="w-3 h-3 text-emerald-500/70 shrink-0" />
-                          <span className="truncate">{text}</span>
-                        </div>
-                      );
-                    })}
+                    {rawDeliverables.slice(0, 3).map((item) => (
+                      <div key={item.id} className="flex items-center gap-1.5 text-[11px] text-zinc-400">
+                        <Sparkles className="w-3 h-3 text-emerald-500/70 shrink-0" />
+                        <span className="truncate">{item.titlePrimary}</span>
+                      </div>
+                    ))}
                     {rawDeliverables.length > 3 && (
                       <span className="text-[10px] text-zinc-500 block pt-0.5">
                         +{rawDeliverables.length - 3} عناصر إضافية
@@ -243,7 +282,7 @@ export const ServiceCatalog: React.FC = () => {
               <div className="pt-3 border-t border-zinc-800/80 flex items-center justify-between mt-auto">
                 <span className="text-xs text-zinc-500">السعر المقترح</span>
                 <span className="text-base font-extrabold text-emerald-400" dir="ltr">
-                  ${Number(servicePrice).toLocaleString()}
+                  ${service.rate.toLocaleString()}
                 </span>
               </div>
             </div>
