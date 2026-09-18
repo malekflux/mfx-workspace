@@ -304,4 +304,13 @@ label {
   width: auto;
   max-height: 32px;
   object-fit: contain;
+  display: inline-block;
+  /* في اللايت مود: قلب الأبيض إلى لون داكن واضح */
+  filter: brightness(0) saturate(100%);
+  transition: filter 0.2s ease;
+}
+
+/* في الدارك مود: استعادة اللون الأبيض الأصلي */
+.dark .brand-logo {
+  filter: none;
 }
