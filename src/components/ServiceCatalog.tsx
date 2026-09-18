@@ -1,10 +1,39 @@
 import React, { useState } from 'react';
 import { Plus, Search, X } from 'lucide-react';
-import { services as initialServices } from '../data/services';
 import type { Service } from '../types';
 
+const INITIAL_SERVICES: Service[] = [
+  {
+    id: 'srv-1',
+    category: 'Branding',
+    titleAr: 'الهوية البصرية المتكاملة',
+    titleEn: 'Visual Identity System',
+    descriptionAr: 'تصميم الشعار، منظومة الألوان والخطوط، ودليل استخدام الهوية الكامل.',
+    descriptionEn: 'Logo design, color palette, typography guidelines, and brand book.',
+    basePrice: 1500,
+  },
+  {
+    id: 'srv-2',
+    category: 'Development',
+    titleAr: 'تصميم وتطوير واجهات المستخدم',
+    titleEn: 'UI/UX & Web Development',
+    descriptionAr: 'واجهات وتطبيقات تفاعلية متجاوبة مبنية بأحدث التقنيات وبأعلى معايير الأداء.',
+    descriptionEn: 'Interactive and responsive web apps built with modern tech stacks.',
+    basePrice: 2500,
+  },
+  {
+    id: 'srv-3',
+    category: 'Marketing',
+    titleAr: 'إدارة الحملات والنمو الرقمي',
+    titleEn: 'Performance Marketing & Ads',
+    descriptionAr: 'إطلاق وتوجيه الحملات المدفوعة على منصات Meta وجوجل وتحسين الـ ROAS.',
+    descriptionEn: 'Paid campaign execution across Meta and Google targeting high ROAS.',
+    basePrice: 1200,
+  },
+];
+
 export const ServiceCatalog: React.FC = () => {
-  const [servicesList, setServicesList] = useState<Service[]>(initialServices);
+  const [servicesList, setServicesList] = useState<Service[]>(INITIAL_SERVICES);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
@@ -12,31 +41,25 @@ export const ServiceCatalog: React.FC = () => {
   const [editingService, setEditingService] = useState<Service | null>(null);
 
   const [formData, setFormData] = useState({
-    code: '',
-    categoryPrimary: '',
-    categorySecondary: '',
-    titlePrimary: '',
-    titleSecondary: '',
-    descriptionPrimary: '',
-    descriptionSecondary: '',
+    category: 'General',
+    titleAr: '',
+    titleEn: '',
+    descriptionAr: '',
+    descriptionEn: '',
     basePrice: 0,
-    unit: 'project',
   });
 
-  const categories = Array.from(new Set(servicesList.map((s) => s.categoryPrimary).filter(Boolean)));
+  const categories = Array.from(new Set(servicesList.map((s) => s.category).filter(Boolean)));
 
   const handleOpenAdd = () => {
     setEditingService(null);
     setFormData({
-      code: `SRV-${servicesList.length + 1}`,
-      categoryPrimary: 'General',
-      categorySecondary: 'General',
-      titlePrimary: '',
-      titleSecondary: '',
-      descriptionPrimary: '',
-      descriptionSecondary: '',
+      category: 'General',
+      titleAr: '',
+      titleEn: '',
+      descriptionAr: '',
+      descriptionEn: '',
       basePrice: 0,
-      unit: 'project',
     });
     setIsModalOpen(true);
   };
@@ -44,15 +67,12 @@ export const ServiceCatalog: React.FC = () => {
   const handleOpenEdit = (service: Service) => {
     setEditingService(service);
     setFormData({
-      code: service.code || '',
-      categoryPrimary: service.categoryPrimary || '',
-      categorySecondary: service.categorySecondary || '',
-      titlePrimary: service.titlePrimary || '',
-      titleSecondary: service.titleSecondary || '',
-      descriptionPrimary: service.descriptionPrimary || '',
-      descriptionSecondary: service.descriptionSecondary || '',
+      category: service.category || 'General',
+      titleAr: service.titleAr || '',
+      titleEn: service.titleEn || '',
+      descriptionAr: service.descriptionAr || '',
+      descriptionEn: service.descriptionEn || '',
       basePrice: service.basePrice || 0,
-      unit: service.unit || 'project',
     });
     setIsModalOpen(true);
   };
@@ -64,7 +84,7 @@ export const ServiceCatalog: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.titlePrimary.trim()) return;
+    if (!formData.titleAr.trim() && !formData.titleEn.trim()) return;
 
     if (editingService) {
       setServicesList((prev) =>
@@ -81,9 +101,6 @@ export const ServiceCatalog: React.FC = () => {
       const newService: Service = {
         id: `srv-${Date.now()}`,
         ...formData,
-        deliverables: [],
-        timelineEstimatePrimary: '2-4 weeks',
-        timelineEstimateSecondary: '2-4 weeks',
       };
       setServicesList((prev) => [newService, ...prev]);
     }
@@ -93,10 +110,11 @@ export const ServiceCatalog: React.FC = () => {
   const filteredServices = servicesList.filter((s) => {
     const term = searchTerm.toLowerCase();
     const matchesSearch =
-      s.titlePrimary.toLowerCase().includes(term) ||
-      (s.titleSecondary && s.titleSecondary.toLowerCase().includes(term)) ||
-      s.descriptionPrimary.toLowerCase().includes(term);
-    const matchesCategory = selectedCategory === 'all' || s.categoryPrimary === selectedCategory;
+      (s.titleAr && s.titleAr.toLowerCase().includes(term)) ||
+      (s.titleEn && s.titleEn.toLowerCase().includes(term)) ||
+      (s.descriptionAr && s.descriptionAr.toLowerCase().includes(term)) ||
+      (s.descriptionEn && s.descriptionEn.toLowerCase().includes(term));
+    const matchesCategory = selectedCategory === 'all' || s.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -165,23 +183,20 @@ export const ServiceCatalog: React.FC = () => {
             <div>
               <div className="flex items-start justify-between gap-2 mb-2">
                 <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-surface-hover text-text-secondary border border-border">
-                  {service.categoryPrimary}
-                </span>
-                <span className="text-[11px] font-mono text-text-secondary">
-                  {service.code}
+                  {service.category}
                 </span>
               </div>
 
               <h4 className="text-base font-semibold text-text-primary mb-1">
-                {service.titlePrimary}
+                {service.titleEn || service.titleAr}
               </h4>
-              {service.titleSecondary && (
-                <p className="text-xs text-text-secondary mb-2">
-                  {service.titleSecondary}
+              {service.titleAr && service.titleEn && (
+                <p className="text-xs text-text-secondary mb-2" dir="rtl">
+                  {service.titleAr}
                 </p>
               )}
               <p className="text-xs text-text-secondary line-clamp-3 mb-4">
-                {service.descriptionPrimary}
+                {service.descriptionEn || service.descriptionAr}
               </p>
             </div>
 
@@ -222,24 +237,24 @@ export const ServiceCatalog: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-text-secondary mb-1">
-                    Title (Primary) *
+                    Title (English)
                   </label>
                   <input
                     type="text"
-                    required
-                    value={formData.titlePrimary}
-                    onChange={(e) => setFormData({ ...formData, titlePrimary: e.target.value })}
+                    value={formData.titleEn}
+                    onChange={(e) => setFormData({ ...formData, titleEn: e.target.value })}
                     className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-text-secondary mb-1">
-                    Title (Secondary)
+                    Title (Arabic)
                   </label>
                   <input
                     type="text"
-                    value={formData.titleSecondary}
-                    onChange={(e) => setFormData({ ...formData, titleSecondary: e.target.value })}
+                    dir="rtl"
+                    value={formData.titleAr}
+                    onChange={(e) => setFormData({ ...formData, titleAr: e.target.value })}
                     className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm"
                   />
                 </div>
@@ -248,12 +263,12 @@ export const ServiceCatalog: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-text-secondary mb-1">
-                    Category (Primary)
+                    Category
                   </label>
                   <input
                     type="text"
-                    value={formData.categoryPrimary}
-                    onChange={(e) => setFormData({ ...formData, categoryPrimary: e.target.value })}
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                     className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm"
                   />
                 </div>
@@ -272,12 +287,25 @@ export const ServiceCatalog: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-medium text-text-secondary mb-1">
-                  Description (Primary)
+                  Description (English)
                 </label>
                 <textarea
-                  rows={3}
-                  value={formData.descriptionPrimary}
-                  onChange={(e) => setFormData({ ...formData, descriptionPrimary: e.target.value })}
+                  rows={2}
+                  value={formData.descriptionEn}
+                  onChange={(e) => setFormData({ ...formData, descriptionEn: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-text-secondary mb-1">
+                  Description (Arabic)
+                </label>
+                <textarea
+                  rows={2}
+                  dir="rtl"
+                  value={formData.descriptionAr}
+                  onChange={(e) => setFormData({ ...formData, descriptionAr: e.target.value })}
                   className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm resize-none"
                 />
               </div>

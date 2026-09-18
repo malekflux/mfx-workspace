@@ -18,50 +18,57 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
 }) => {
   const { clients, addProject, updateProject } = useStore();
   const [formData, setFormData] = useState({
-    namePrimary: '',
-    nameSecondary: '',
     clientId: clientId || '',
     billingModel: 'fixed' as Project['billingModel'],
     currency: 'USD' as Project['currency'],
-    scopeSummaryPrimary: '',
-    scopeSummarySecondary: '',
-    total: 0,
+    totalAmount: 0,
     paidAmount: 0,
+    remainingAmount: 0,
   });
 
   useEffect(() => {
     if (project) {
       setFormData({
-        namePrimary: project.namePrimary || '',
-        nameSecondary: project.nameSecondary || '',
         clientId: project.clientId || '',
         billingModel: project.billingModel || 'fixed',
         currency: project.currency || 'USD',
-        scopeSummaryPrimary: project.scopeSummaryPrimary || '',
-        scopeSummarySecondary: project.scopeSummarySecondary || '',
-        total: project.total || 0,
+        totalAmount: project.totalAmount || 0,
         paidAmount: project.paidAmount || 0,
+        remainingAmount: project.remainingAmount || 0,
       });
     } else {
       setFormData({
-        namePrimary: '',
-        nameSecondary: '',
         clientId: clientId || (clients[0]?.id || ''),
         billingModel: 'fixed',
         currency: 'USD',
-        scopeSummaryPrimary: '',
-        scopeSummarySecondary: '',
-        total: 0,
+        totalAmount: 0,
         paidAmount: 0,
+        remainingAmount: 0,
       });
     }
   }, [project, clients, clientId, isOpen]);
 
   if (!isOpen) return null;
 
+  const handleTotalChange = (val: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      totalAmount: val,
+      remainingAmount: Math.max(0, val - prev.paidAmount),
+    }));
+  };
+
+  const handlePaidChange = (val: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      paidAmount: val,
+      remainingAmount: Math.max(0, prev.totalAmount - val),
+    }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.namePrimary.trim() || !formData.clientId) return;
+    if (!formData.clientId) return;
 
     if (project) {
       updateProject(project.id, formData);
@@ -69,7 +76,7 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
       addProject({
         ...formData,
         services: [],
-      });
+      } as any);
     }
     onClose();
   };
@@ -91,51 +98,26 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-text-secondary mb-1">
-                Project Name (Primary) *
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.namePrimary}
-                onChange={(e) => setFormData({ ...formData, namePrimary: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-text-secondary mb-1">
-                Project Name (Secondary)
-              </label>
-              <input
-                type="text"
-                value={formData.nameSecondary}
-                onChange={(e) => setFormData({ ...formData, nameSecondary: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm"
-              />
-            </div>
+          <div>
+            <label className="block text-xs font-medium text-text-secondary mb-1">
+              Client *
+            </label>
+            <select
+              required
+              value={formData.clientId}
+              onChange={(e) => setFormData({ ...formData, clientId: e.target.value })}
+              className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm"
+            >
+              <option value="" disabled>Select a client</option>
+              {clients.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.businessName} {c.contactPerson ? `(${c.contactPerson})` : ''}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-text-secondary mb-1">
-                Client *
-              </label>
-              <select
-                required
-                value={formData.clientId}
-                onChange={(e) => setFormData({ ...formData, clientId: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm"
-              >
-                <option value="" disabled>Select a client</option>
-                {clients.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.namePrimary} {c.companyPrimary ? `(${c.companyPrimary})` : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
             <div>
               <label className="block text-xs font-medium text-text-secondary mb-1">
                 Billing Model
@@ -151,9 +133,6 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
                 <option value="time-and-materials">Time & Materials</option>
               </select>
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-medium text-text-secondary mb-1">
                 Currency
@@ -170,14 +149,17 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
                 <option value="AED">AED</option>
               </select>
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-medium text-text-secondary mb-1">
-                Total Budget
+                Total Amount
               </label>
               <input
                 type="number"
-                value={formData.total}
-                onChange={(e) => setFormData({ ...formData, total: Number(e.target.value) || 0 })}
+                value={formData.totalAmount}
+                onChange={(e) => handleTotalChange(Number(e.target.value) || 0)}
                 className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm"
               />
             </div>
@@ -188,22 +170,21 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
               <input
                 type="number"
                 value={formData.paidAmount}
-                onChange={(e) => setFormData({ ...formData, paidAmount: Number(e.target.value) || 0 })}
+                onChange={(e) => handlePaidChange(Number(e.target.value) || 0)}
                 className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm"
               />
             </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-text-secondary mb-1">
-              Scope Summary (Primary)
-            </label>
-            <textarea
-              rows={3}
-              value={formData.scopeSummaryPrimary}
-              onChange={(e) => setFormData({ ...formData, scopeSummaryPrimary: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm resize-none"
-            />
+            <div>
+              <label className="block text-xs font-medium text-text-secondary mb-1">
+                Remaining
+              </label>
+              <input
+                type="number"
+                disabled
+                value={formData.remainingAmount}
+                className="w-full px-3 py-2 rounded-lg bg-surface-hover/50 border border-border text-text-secondary text-sm cursor-not-allowed"
+              />
+            </div>
           </div>
 
           <div className="flex items-center justify-end gap-2 pt-4 border-t border-border">

@@ -18,38 +18,26 @@ export const ClientModal: React.FC<ClientModalProps> = ({
 }) => {
   const { addClient, updateClient } = useStore();
   const [formData, setFormData] = useState({
-    namePrimary: '',
-    nameSecondary: '',
-    companyPrimary: '',
-    companySecondary: '',
+    businessName: '',
+    contactPerson: '',
     email: '',
     phone: '',
-    country: 'Egypt',
-    city: 'Cairo',
   });
 
   useEffect(() => {
     if (client) {
       setFormData({
-        namePrimary: client.namePrimary || '',
-        nameSecondary: client.nameSecondary || '',
-        companyPrimary: client.companyPrimary || '',
-        companySecondary: client.companySecondary || '',
+        businessName: client.businessName || '',
+        contactPerson: client.contactPerson || '',
         email: client.email || '',
         phone: client.phone || '',
-        country: client.country || 'Egypt',
-        city: client.city || 'Cairo',
       });
     } else {
       setFormData({
-        namePrimary: '',
-        nameSecondary: '',
-        companyPrimary: '',
-        companySecondary: '',
+        businessName: '',
+        contactPerson: '',
         email: '',
         phone: '',
-        country: 'Egypt',
-        city: 'Cairo',
       });
     }
   }, [client, isOpen]);
@@ -58,12 +46,12 @@ export const ClientModal: React.FC<ClientModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.namePrimary.trim()) return;
+    if (!formData.businessName.trim() && !formData.contactPerson.trim()) return;
 
     if (client) {
       updateClient(client.id, formData);
     } else {
-      addClient(formData);
+      addClient(formData as any);
     }
     onClose();
   };
@@ -85,55 +73,31 @@ export const ClientModal: React.FC<ClientModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-text-secondary mb-1">
-                Name (Primary) *
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.namePrimary}
-                onChange={(e) => setFormData({ ...formData, namePrimary: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-text-secondary mb-1">
-                Name (Secondary)
-              </label>
-              <input
-                type="text"
-                value={formData.nameSecondary}
-                onChange={(e) => setFormData({ ...formData, nameSecondary: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm"
-              />
-            </div>
+          <div>
+            <label className="block text-xs font-medium text-text-secondary mb-1">
+              Business / Company Name *
+            </label>
+            <input
+              type="text"
+              required
+              value={formData.businessName}
+              onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
+              className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm"
+              placeholder="e.g. MFx Agency"
+            />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-text-secondary mb-1">
-                Company (Primary)
-              </label>
-              <input
-                type="text"
-                value={formData.companyPrimary}
-                onChange={(e) => setFormData({ ...formData, companyPrimary: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-text-secondary mb-1">
-                Company (Secondary)
-              </label>
-              <input
-                type="text"
-                value={formData.companySecondary}
-                onChange={(e) => setFormData({ ...formData, companySecondary: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm"
-              />
-            </div>
+          <div>
+            <label className="block text-xs font-medium text-text-secondary mb-1">
+              Contact Person
+            </label>
+            <input
+              type="text"
+              value={formData.contactPerson}
+              onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
+              className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm"
+              placeholder="e.g. Ahmed Nahas"
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -146,6 +110,7 @@ export const ClientModal: React.FC<ClientModalProps> = ({
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm"
+                placeholder="client@mfx360.com"
               />
             </div>
             <div>
@@ -157,31 +122,7 @@ export const ClientModal: React.FC<ClientModalProps> = ({
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-text-secondary mb-1">
-                Country
-              </label>
-              <input
-                type="text"
-                value={formData.country}
-                onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-text-secondary mb-1">
-                City
-              </label>
-              <input
-                type="text"
-                value={formData.city}
-                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm"
+                placeholder="+20 100 000 0000"
               />
             </div>
           </div>
