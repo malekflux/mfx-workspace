@@ -1,69 +1,71 @@
 import React, { useState, useEffect } from 'react';
-import { X, FolderPlus, DollarSign, Calendar, FileText, Check } from 'lucide-react';
+import { X, FolderPlus, DollarSign, Check } from 'lucide-react';
 import { useStore } from '../store/useStore';
-import { Project } from '../types';
+import type { Project } from '../types';
 
 interface ProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
   project?: Project | null;
+  clientId?: string;
 }
 
 export const ProjectModal: React.FC<ProjectModalProps> = ({
   isOpen,
   onClose,
   project,
+  clientId,
 }) => {
   const { clients, addProject, updateProject } = useStore();
   const [formData, setFormData] = useState({
-    title: '',
-    clientId: '',
+    namePrimary: '',
+    nameSecondary: '',
+    clientId: clientId || '',
     description: '',
     budget: '',
-    status: 'pending' as Project['status'],
-    startDate: new Date().toISOString().split('T')[0],
-    dueDate: '',
+    currency: 'USD',
   });
 
   useEffect(() => {
     if (project) {
       setFormData({
-        title: project.title || '',
-        clientId: project.clientId || '',
-        description: project.description || '',
-        budget: project.budget ? String(project.budget) : '',
-        status: project.status || 'pending',
-        startDate: project.startDate ? project.startDate.split('T')[0] : new Date().toISOString().split('T')[0],
-        dueDate: project.dueDate ? project.dueDate.split('T')[0] : '',
+        namePrimary: (project as any).namePrimary || (project as any).title || (project as any).name || '',
+        nameSecondary: (project as any).nameSecondary || '',
+        clientId: (project as any).clientId || '',
+        description: (project as any).description || '',
+        budget: String((project as any).budget || (project as any).total || ''),
+        currency: (project as any).currency || 'USD',
       });
     } else {
       setFormData({
-        title: '',
-        clientId: clients[0]?.id || '',
+        namePrimary: '',
+        nameSecondary: '',
+        clientId: clientId || (clients[0]?.id ? String(clients[0].id) : ''),
         description: '',
         budget: '',
-        status: 'pending',
-        startDate: new Date().toISOString().split('T')[0],
-        dueDate: '',
+        currency: 'USD',
       });
     }
-  }, [project, clients, isOpen]);
+  }, [project, clients, clientId, isOpen]);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.title.trim() || !formData.clientId) return;
+    if (!formData.namePrimary.trim()) return;
 
-    const payload = {
+    const payload: any = {
       ...formData,
+      name: formData.namePrimary,
+      title: formData.namePrimary,
       budget: Number(formData.budget) || 0,
+      total: Number(formData.budget) || 0,
     };
 
     if (project) {
-      updateProject(project.id, payload);
+      (updateProject as any)(project.id, payload);
     } else {
-      addProject(payload);
+      (addProject as any)(payload);
     }
     onClose();
   };
@@ -97,14 +99,14 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
         <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1 text-right">
           <div>
             <label className="block text-xs font-medium text-zinc-300 mb-1.5">
-              عنوان المشروع <span className="text-blue-500">*</span>
+              اسم المشروع <span className="text-blue-500">*</span>
             </label>
             <input
               type="text"
               required
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              placeholder="مثال: تطوير الهوية البصرية والموقع"
+              value={formData.namePrimary}
+              onChange={(e) => setFormData({ ...formData, namePrimary: e.target.value })}
+              placeholder="مثال: الحملة الإعلانية وتطوير المتجر"
               className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm transition"
             />
           </div>
@@ -121,35 +123,21 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
                 className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm transition"
               >
                 <option value="" disabled>اختر العميل</option>
-                {clients.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} {c.company ? `(${c.company})` : ''}
-                  </option>
-                ))}
+                {clients.map((c: any) => {
+                  const clientName = c.namePrimary || c.name || 'عميل بدون اسم';
+                  const company = c.companyPrimary || c.company || '';
+                  return (
+                    <option key={c.id} value={c.id}>
+                      {clientName} {company ? `(${company})` : ''}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
             <div>
               <label className="block text-xs font-medium text-zinc-300 mb-1.5">
-                حالة المشروع
-              </label>
-              <select
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm transition"
-              >
-                <option value="pending">قيد الانتظار (Pending)</option>
-                <option value="in-progress">قيد التنفيذ (In Progress)</option>
-                <option value="completed">مكتمل (Completed)</option>
-                <option value="cancelled">ملغي (Cancelled)</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-1.5">
-                الميزانية المتوقعة
+                الميزانية
               </label>
               <div className="relative">
                 <input
@@ -162,32 +150,17 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
                 <DollarSign className="w-4 h-4 text-zinc-500 absolute right-3.5 top-3" />
               </div>
             </div>
-
-            <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-1.5">
-                تاريخ التسليم النهائي
-              </label>
-              <div className="relative">
-                <input
-                  type="date"
-                  value={formData.dueDate}
-                  onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                  className="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm transition text-right"
-                />
-                <Calendar className="w-4 h-4 text-zinc-500 absolute right-3.5 top-3 pointer-events-none" />
-              </div>
-            </div>
           </div>
 
           <div>
             <label className="block text-xs font-medium text-zinc-300 mb-1.5">
-              وصف المشروع ونطاق العمل
+              الوصف والملاحظات
             </label>
             <textarea
               rows={3}
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="تفاصيل ونطاق العمل الخاص بالمشروع..."
+              placeholder="تفاصيل المشروع ونطاق العمل..."
               className="w-full p-3.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm transition resize-none"
             />
           </div>
