@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, Mail, Phone, Building, FileText, Check } from 'lucide-react';
+import { X, User, Mail, Phone, Building, Check } from 'lucide-react';
 import { useStore } from '../store/useStore';
-import { Client } from '../types';
+import type { Client } from '../types';
 
 interface ClientModalProps {
   isOpen: boolean;
@@ -16,28 +16,43 @@ export const ClientModal: React.FC<ClientModalProps> = ({
 }) => {
   const { addClient, updateClient } = useStore();
   const [formData, setFormData] = useState({
-    name: '',
-    company: '',
+    nameAr: '',
+    nameEn: '',
+    companyAr: '',
+    companyEn: '',
     email: '',
     phone: '',
+    taxNumber: '',
+    commercialRegister: '',
+    address: '',
     notes: '',
   });
 
   useEffect(() => {
     if (client) {
       setFormData({
-        name: client.name || '',
-        company: client.company || '',
+        nameAr: client.nameAr || '',
+        nameEn: client.nameEn || '',
+        companyAr: client.companyAr || '',
+        companyEn: client.companyEn || '',
         email: client.email || '',
         phone: client.phone || '',
+        taxNumber: client.taxNumber || '',
+        commercialRegister: client.commercialRegister || '',
+        address: client.address || '',
         notes: client.notes || '',
       });
     } else {
       setFormData({
-        name: '',
-        company: '',
+        nameAr: '',
+        nameEn: '',
+        companyAr: '',
+        companyEn: '',
         email: '',
         phone: '',
+        taxNumber: '',
+        commercialRegister: '',
+        address: '',
         notes: '',
       });
     }
@@ -47,7 +62,7 @@ export const ClientModal: React.FC<ClientModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim()) return;
+    if (!formData.nameAr.trim() && !formData.nameEn.trim()) return;
 
     if (client) {
       updateClient(client.id, formData);
@@ -82,38 +97,76 @@ export const ClientModal: React.FC<ClientModalProps> = ({
           </button>
         </div>
 
-        {/* Body Form */}
+        {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1 text-right">
-          <div>
-            <label className="block text-xs font-medium text-zinc-300 mb-1.5">
-              اسم العميل <span className="text-emerald-500">*</span>
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="أحمد محمد"
-                className="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm transition"
-              />
-              <User className="w-4 h-4 text-zinc-500 absolute right-3.5 top-3" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+                الاسم (بالعربية) <span className="text-emerald-500">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  required
+                  value={formData.nameAr}
+                  onChange={(e) => setFormData({ ...formData, nameAr: e.target.value })}
+                  placeholder="أحمد محمد"
+                  className="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm transition"
+                />
+                <User className="w-4 h-4 text-zinc-500 absolute right-3.5 top-3" />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+                الاسم (English)
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={formData.nameEn}
+                  onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
+                  placeholder="Ahmed Mohamed"
+                  dir="ltr"
+                  className="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm transition text-right"
+                />
+                <User className="w-4 h-4 text-zinc-500 absolute right-3.5 top-3" />
+              </div>
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-zinc-300 mb-1.5">
-              الشركة أو المؤسسة
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                value={formData.company}
-                onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                placeholder="اسم الشركة (اختياري)"
-                className="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm transition"
-              />
-              <Building className="w-4 h-4 text-zinc-500 absolute right-3.5 top-3" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+                الشركة (بالعربية)
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={formData.companyAr}
+                  onChange={(e) => setFormData({ ...formData, companyAr: e.target.value })}
+                  placeholder="اسم الشركة"
+                  className="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm transition"
+                />
+                <Building className="w-4 h-4 text-zinc-500 absolute right-3.5 top-3" />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+                الشركة (English)
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={formData.companyEn}
+                  onChange={(e) => setFormData({ ...formData, companyEn: e.target.value })}
+                  placeholder="Company Name"
+                  dir="ltr"
+                  className="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm transition text-right"
+                />
+                <Building className="w-4 h-4 text-zinc-500 absolute right-3.5 top-3" />
+              </div>
             </div>
           </div>
 
@@ -157,15 +210,13 @@ export const ClientModal: React.FC<ClientModalProps> = ({
             <label className="block text-xs font-medium text-zinc-300 mb-1.5">
               ملاحظات إضافية
             </label>
-            <div className="relative">
-              <textarea
-                rows={3}
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="أي ملاحظات تخص العميل..."
-                className="w-full p-3.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm transition resize-none"
-              />
-            </div>
+            <textarea
+              rows={3}
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              placeholder="أي ملاحظات تخص العميل..."
+              className="w-full p-3.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm transition resize-none"
+            />
           </div>
 
           {/* Footer */}
