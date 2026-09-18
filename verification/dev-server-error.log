@@ -1,0 +1,42 @@
+5:01:49 PM [vite] Internal server error: Cannot apply unknown utility class `bg-slate-50`. Are you using CSS modules or similar and missing `@reference`? https://tailwindcss.com/docs/functions-and-directives#reference-directive
+  Plugin: @tailwindcss/vite:generate:serve
+  File: D:/MFx/mfx-workspace/src/index.css
+      at onInvalidCandidate (file:///D:/MFx/mfx-workspace/node_modules/tailwindcss/dist/lib.mjs:21:1682)
+      at $e (file:///D:/MFx/mfx-workspace/node_modules/tailwindcss/dist/lib.mjs:16:39796)
+      at file:///D:/MFx/mfx-workspace/node_modules/tailwindcss/dist/lib.mjs:21:711
+      at Hr (file:///D:/MFx/mfx-workspace/node_modules/tailwindcss/dist/lib.mjs:5:1775)
+      at P (file:///D:/MFx/mfx-workspace/node_modules/tailwindcss/dist/lib.mjs:5:1377)
+      at Ve (file:///D:/MFx/mfx-workspace/node_modules/tailwindcss/dist/lib.mjs:21:172)
+      at pn (file:///D:/MFx/mfx-workspace/node_modules/tailwindcss/dist/lib.mjs:38:294)
+      at async Ea (file:///D:/MFx/mfx-workspace/node_modules/tailwindcss/dist/lib.mjs:38:631)
+      at async zf (file:///D:/MFx/mfx-workspace/node_modules/tailwindcss/dist/lib.mjs:38:1406)
+      at async fu (file:///D:/MFx/mfx-workspace/node_modules/@tailwindcss/node/dist/index.mjs:10:3458)
+      at async z.generate (file:///D:/MFx/mfx-workspace/node_modules/@tailwindcss/vite/dist/index.mjs:1:6013)
+      at async TransformPluginContext.handler (file:///D:/MFx/mfx-workspace/node_modules/@tailwindcss/vite/dist/index.mjs:1:3133)
+      at async EnvironmentPluginContainer.transform (file:///D:/MFx/mfx-workspace/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42453:18)
+      at async loadAndTransform (file:///D:/MFx/mfx-workspace/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:35845:27)
+      at async viteTransformMiddleware (file:///D:/MFx/mfx-workspace/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:37369:24)
+5:16:27 PM [vite] (client) Pre-transform error: Failed to load PostCSS config (searchPath: D:/MFx/mfx-workspace): [Error] Loading PostCSS Plugin failed: Cannot find module 'D:\MFx\mfx-workspace\node_modules\tailwindcss\dist\lib.js'
+
+(@D:\MFx\mfx-workspace\postcss.config.js)
+Error: Loading PostCSS Plugin failed: Cannot find module 'D:\MFx\mfx-workspace\node_modules\tailwindcss\dist\lib.js'
+
+(@D:\MFx\mfx-workspace\postcss.config.js)
+    at load (file:///D:/MFx/mfx-workspace/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:11776:11)
+    at async Promise.all (index 0)
+    at async plugins (file:///D:/MFx/mfx-workspace/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:11805:12)
+    at async processResult (file:///D:/MFx/mfx-workspace/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:11876:14)
+  Plugin: vite:css
+  File: D:/MFx/mfx-workspace/src/index.css
+5:16:27 PM [vite] Internal server error: Failed to load PostCSS config (searchPath: D:/MFx/mfx-workspace): [Error] Loading PostCSS Plugin failed: Cannot find module 'D:\MFx\mfx-workspace\node_modules\tailwindcss\dist\lib.js'
+
+(@D:\MFx\mfx-workspace\postcss.config.js)
+Error: Loading PostCSS Plugin failed: Cannot find module 'D:\MFx\mfx-workspace\node_modules\tailwindcss\dist\lib.js'
+
+(@D:\MFx\mfx-workspace\postcss.config.js)
+    at load (file:///D:/MFx/mfx-workspace/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:11776:11)
+    at async Promise.all (index 0)
+    at async plugins (file:///D:/MFx/mfx-workspace/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:11805:12)
+    at async processResult (file:///D:/MFx/mfx-workspace/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:11876:14)
+  Plugin: vite:css
+  File: D:/MFx/mfx-workspace/src/index.css
