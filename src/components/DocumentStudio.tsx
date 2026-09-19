@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { closeOnBackdrop, useDialog } from '../hooks/useDialog';
 import { generateDocument, getDocumentReference } from '../documents/generate';
 import type { DocumentInput, Language } from '../documents/generate';
@@ -9,6 +9,7 @@ export function DocumentStudio({ input, onClose }: { input: Omit<DocumentInput, 
   const [ready, setReady] = useState(false);
   const [error, setError] = useState('');
   const [exporting, setExporting] = useState(false);
+  const exportInFlight = useRef(false);
   const dialogRef = useDialog(onClose);
   const terms = language === 'ar' ? input.projects[0]?.contractTermsAr : input.projects[0]?.contractTermsEn;
   const html = useMemo(() => generateDocument({ ...input, language, terms }), [input, language, terms]);
@@ -16,11 +17,16 @@ export function DocumentStudio({ input, onClose }: { input: Omit<DocumentInput, 
   const documentReference = getDocumentReference(input.kind, client?.refId, input.date);
 
   const savePDF = async () => {
+    if (exportInFlight.current) return;
+    exportInFlight.current = true;
     setExporting(true);
     setError('');
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 50000);
     try {
-      const response = await fetch('/api/pdf', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ html }) });
-      if (!response.ok) throw new Error(await response.text());
+      const response = await fetch('/api/pdf', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ html }), signal: controller.signal });
+      if (response.status === 404) throw new Error('PDF service is missing from this deployment. Redeploy the latest project files.');
+      if (!response.ok) throw new Error((await response.text()) || `PDF export failed (${response.status}).`);
       const blob = await response.blob();
       if (!blob.type.includes('application/pdf')) throw new Error('PDF server is unavailable.');
       const url = URL.createObjectURL(blob);
@@ -30,8 +36,10 @@ export function DocumentStudio({ input, onClose }: { input: Omit<DocumentInput, 
       anchor.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'PDF export failed.');
+      setError(caught instanceof DOMException && caught.name === 'AbortError' ? 'PDF generation timed out. Please try again.' : caught instanceof Error ? caught.message : 'PDF export failed.');
     } finally {
+      window.clearTimeout(timeout);
+      exportInFlight.current = false;
       setExporting(false);
     }
   };

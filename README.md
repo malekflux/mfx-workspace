@@ -45,11 +45,14 @@ Sheet1 columns A–P retain the previous layout: reference, business name, conta
 ```powershell
 npm run lint
 npm test
+npm run test:deployment
 npm run build
 npm run preview
 ```
 
-`npm test` runs 28 focused regression checks and creates bilingual samples in `verification/`. The build output is `dist/`.
+`npm test` runs 29 focused regression checks and creates bilingual samples in `verification/`. The build output is `dist/`.
+
+`npm run test:deployment` bundles and invokes the same `api/pdf.ts` serverless function used by Vercel, then verifies that it returns a real `%PDF` file. Vercel deployment requires `api/pdf.ts`, `server/pdf.ts`, `vercel.json`, `package.json`, and `package-lock.json` to be committed together so the bundled serverless Chromium dependency is installed.
 
 Read `PROJECT_COMPLETE.md` for verified results and remaining validation limits. Older milestone documents have been marked as historical.
 
