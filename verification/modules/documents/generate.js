@@ -6,6 +6,7 @@ var logo_default = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABogAAAOtCAYAAA
 
 // src/documents/generate.ts
 var escapeHTML = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+var getDocumentReference = (kind, clientRef, date) => kind === "report" ? `RPT-${(date || (/* @__PURE__ */ new Date()).toISOString()).slice(0, 10)}` : `${kind === "invoice" ? "INV" : "CON"}-${clientRef || "MFx"}`;
 var safeImage = (value) => value && /^data:image\/(png|jpeg|webp);base64,[a-z0-9+/=]+$/i.test(value) ? value : "";
 function generateDocument(input) {
   const { kind, language, projects, clients } = input;
@@ -17,7 +18,7 @@ function generateDocument(input) {
   const title = kind === "invoice" ? t("Invoice", "\u0641\u0627\u062A\u0648\u0631\u0629") : kind === "contract" ? t("Service Agreement & Scope of Work", "\u0639\u0642\u062F \u062E\u062F\u0645\u0627\u062A \u0648\u0646\u0637\u0627\u0642 \u0627\u0644\u0639\u0645\u0644") : t("Workspace Report", "\u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u0623\u0639\u0645\u0627\u0644");
   const project = projects[0];
   const client = clients.find((c) => c.id === project?.clientId);
-  const ref = kind === "report" ? `RPT-${(input.date || (/* @__PURE__ */ new Date()).toISOString()).slice(0, 10)}` : `${kind === "invoice" ? "INV" : "CON"}-${client?.refId || ""}`;
+  const ref = getDocumentReference(kind, client?.refId, input.date);
   const name = (s) => ar ? s.nameAr || s.name : s.name;
   const serviceRows = (project?.services || []).map((s, i) => `<tr class="service-row"><td class="service-cell"><div class="service-header"><div class="service-number">${String(i + 1).padStart(2, "0")}</div><div class="service-name" dir="auto">${e(name(s))}</div>${s.isRecurring ? `<span class="badge-tag badge-recurring">${t("Recurring", "\u0645\u062A\u0643\u0631\u0631\u0629")}</span>` : ""}${s.isVariable ? `<span class="badge-tag badge-variable">${t("Variable", "\u0645\u062A\u063A\u064A\u0631\u0629")}</span>` : ""}</div><ul class="sub-services-list">${[ar ? s.descriptionAr || s.description : s.description, ...ar ? s.subServicesAr?.length ? s.subServicesAr : s.subServices || [] : s.subServices || []].filter(Boolean).map((v) => `<li dir="auto">${e(v)}</li>`).join("")}</ul></td><td class="price-cell">${money(s.basePrice, project.currency)}</td></tr>`).join("");
   const meta = (label, value) => `<div class="meta-item"><span class="meta-label">${label}</span><span class="meta-val">${value}</span></div>`;
@@ -43,5 +44,6 @@ ${extra}</style></head><body><div class="proposal-container"><div class="top-bar
 }
 export {
   escapeHTML,
-  generateDocument
+  generateDocument,
+  getDocumentReference
 };

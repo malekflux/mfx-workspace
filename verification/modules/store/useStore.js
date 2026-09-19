@@ -389,6 +389,7 @@ var useStore = create()(
       // Services Catalog
       servicesCatalog: standardServices,
       updateServiceInCatalog: (id, data) => set((state) => ({ servicesCatalog: state.servicesCatalog.map((s) => s.id === id ? { ...s, ...data } : s) })),
+      deleteServiceFromCatalog: (id) => set((state) => ({ servicesCatalog: state.servicesCatalog.filter((service) => service.id !== id) })),
       addServiceToCatalog: (service) => set((state) => ({
         servicesCatalog: [...state.servicesCatalog, service]
       }))
