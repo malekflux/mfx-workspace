@@ -5,16 +5,26 @@ import puppeteer from 'puppeteer-core';
 import chromium from '@sparticuz/chromium';
 import type { Plugin } from 'vite';
 const require=createRequire(import.meta.url);
-const fonts=[400,500,600,700,800,900].flatMap(weight=>['arabic','latin'].map(subset=>`@font-face{font-family:Cairo;font-style:normal;font-weight:${weight};src:url(data:font/woff2;base64,${readFileSync(require.resolve(`@fontsource/cairo/files/cairo-${subset}-${weight}-normal.woff2`)).toString('base64')}) format('woff2');unicode-range:${subset==='arabic'?'U+0600-06FF,U+0750-077F,U+08A0-08FF,U+FB50-FDFF,U+FE70-FEFF':'U+0000-00FF,U+0100-024F,U+2000-206F'};}`)).join('');
+let cachedFonts:string|undefined;
+function embeddedFonts() {
+ if(cachedFonts!==undefined)return cachedFonts;
+ try {
+  cachedFonts=[400,500,600,700,800,900].flatMap(weight=>['arabic','latin'].map(subset=>`@font-face{font-family:Cairo;font-style:normal;font-weight:${weight};src:url(data:font/woff2;base64,${readFileSync(require.resolve(`@fontsource/cairo/files/cairo-${subset}-${weight}-normal.woff2`)).toString('base64')}) format('woff2');unicode-range:${subset==='arabic'?'U+0600-06FF,U+0750-077F,U+08A0-08FF,U+FB50-FDFF,U+FE70-FEFF':'U+0000-00FF,U+0100-024F,U+2000-206F'};}`)).join('');
+ } catch { cachedFonts=''; }
+ return cachedFonts;
+}
 export async function renderPDF(html:string) {
  const localExecutable=[process.env.PDF_BROWSER_PATH,'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe','C:/Program Files/Google/Chrome/Application/chrome.exe','/usr/bin/chromium','/usr/bin/google-chrome'].find(path=>path&&existsSync(path));
  const executablePath=localExecutable || await chromium.executablePath();
  if(!executablePath)throw new Error('No PDF browser is available.');
- const browser=await puppeteer.launch({executablePath,headless:true,args:localExecutable?['--disable-extensions']:chromium.args,timeout:20000});
+ const headless=localExecutable?true:'shell';
+ const args=localExecutable?['--disable-extensions']:await puppeteer.defaultArgs({args:chromium.args,headless:'shell'});
+ const browser=await puppeteer.launch({executablePath,headless,args,timeout:20000});
  try {
   const page=await browser.newPage();await page.setJavaScriptEnabled(false);await page.setRequestInterception(true);
   page.on('request',request=>{if(request.url().startsWith('data:')||request.url()==='about:blank')void request.continue();else void request.abort();});
-  const source=html.replace(/<link\b[^>]*>/gi,'').replace('</head>',`<style>${fonts}</style></head>`);
+  const fonts=embeddedFonts();
+  const source=html.replace(/<link\b[^>]*>/gi,'').replace('</head>',fonts?`<style>${fonts}</style></head>`:'</head>');
   await page.setContent(source,{waitUntil:'load',timeout:20000});await page.emulateMediaType('print');
   await page.evaluate(async()=>{await document.fonts.ready;await Promise.all(Array.from(document.images).map(img=>img.decode().catch(()=>undefined)));});
   return await page.pdf({format:'A4',printBackground:true,preferCSSPageSize:true,timeout:25000});

@@ -2,7 +2,7 @@
   "functions": {
     "api/pdf.ts": {
       "maxDuration": 60,
-      "memory": 1024
+      "includeFiles": "node_modules/@fontsource/cairo/files/*.woff2"
     }
   }
 }

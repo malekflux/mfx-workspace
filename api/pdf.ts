@@ -1,5 +1,4 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { renderPDF } from '../server/pdf.js';
 
 type VercelRequest = IncomingMessage & { body?: unknown };
 
@@ -27,6 +26,7 @@ export default async function handler(req: VercelRequest, res: ServerResponse) {
       return;
     }
 
+    const { renderPDF } = await import('../server/pdf.js');
     const pdf = await renderPDF(html);
     res.writeHead(200, {
       'Content-Type': 'application/pdf',
