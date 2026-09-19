@@ -95,14 +95,14 @@ export const Workspace = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="workspace-header flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-ink">Workspace</h1>
           <p className="text-sm text-muted mt-1">
             Manage your clients and projects
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="workspace-header-actions flex items-center gap-3">
           <button
             onClick={() => {setEditingClient(undefined);setIsClientModalOpen(true);}}
             className="flex items-center gap-2 px-4 py-2 bg-canvas bg-surface text-ink text-muted rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
@@ -176,9 +176,9 @@ export const Workspace = () => {
                 className="bg-surface rounded-lg border border-line p-5 hover:border-primary/50 transition-colors"
                 style={{ borderLeftWidth: '4px', borderLeftColor: client?.color || '#0b58bd' }}
               >
-                <div className="flex items-start justify-between mb-4">
+                <div className="project-card-header flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="project-card-title flex items-center gap-3 mb-2">
                       <h3 className="text-lg font-bold text-ink">
                         {client?.businessName}
                       </h3>
@@ -189,7 +189,7 @@ export const Workspace = () => {
                         {project.paymentStatus.charAt(0).toUpperCase()+project.paymentStatus.slice(1)}
                       </span>
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-muted">
+                    <div className="project-card-meta flex items-center gap-4 text-sm text-muted">
                       <span className="font-semibold text-primary">{project.refId}</span>
                       <span>•</span>
                       <span>{client?.contactPerson}</span>
@@ -199,7 +199,7 @@ export const Workspace = () => {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center gap-2">
+                  <div className="project-card-actions flex items-center gap-2">
                     <button
                       onClick={() => handleToggleTimer(project.id)}
                       className={`p-2 rounded-lg transition-colors ${
@@ -280,7 +280,7 @@ export const Workspace = () => {
                 </div>
 
                 {/* Financial Info */}
-                <div className="grid grid-cols-4 gap-4 p-4 bg-canvas bg-surface rounded-lg">
+                <div className="project-financial-grid grid grid-cols-4 gap-4 p-4 bg-canvas bg-surface rounded-lg">
                   <div>
                     <p className="text-xs text-muted mb-1">Total</p>
                     <p className="text-sm font-bold text-ink">

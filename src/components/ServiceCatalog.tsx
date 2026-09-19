@@ -1,257 +1,79 @@
-import React, { useState } from 'react';
-import { Plus, Search, X } from 'lucide-react';
+import { useState } from 'react';
+import { Pencil, Trash2 } from 'lucide-react';
+import { closeOnBackdrop, useDialog } from '../hooks/useDialog';
+import { useStore } from '../store/useStore';
 import type { Service } from '../types';
+import { ModalPortal } from './ModalPortal';
 
-const INITIAL_SERVICES: Service[] = [
-  {
-    id: 'srv-1',
-    name: 'Brand Identity & Visual System',
-    description: 'Logo design, color palette, typography guidelines, and brand system.',
-    descriptionAr: 'تصميم الشعار، منظومة الألوان والخطوط، ودليل استخدام الهوية الكامل.',
-    basePrice: 1500,
-  },
-  {
-    id: 'srv-2',
-    name: 'UI/UX Design & Web Platform',
-    description: 'Interactive and responsive web applications built with modern frameworks.',
-    descriptionAr: 'تصميم وتطوير واجهات وتطبيقات تفاعلية متجاوبة بأعلى معايير الأداء.',
-    basePrice: 2500,
-  },
-  {
-    id: 'srv-3',
-    name: 'Performance Marketing & Campaigns',
-    description: 'Paid campaign execution across digital channels targeting maximum ROAS.',
-    descriptionAr: 'إطلاق وتوجيه الحملات الإعلانية المدفوعة وتحسين العائد الإعلاني ومعدلات التحويل.',
-    basePrice: 1200,
-  },
-];
-
-export const ServiceCatalog: React.FC = () => {
-  const [servicesList, setServicesList] = useState<Service[]>(INITIAL_SERVICES);
-  const [searchTerm, setSearchTerm] = useState('');
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingService, setEditingService] = useState<Service | null>(null);
-
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    descriptionAr: '',
-    basePrice: 0,
-  });
-
-  const handleOpenAdd = () => {
-    setEditingService(null);
-    setFormData({
-      name: '',
-      description: '',
-      descriptionAr: '',
-      basePrice: 0,
-    });
-    setIsModalOpen(true);
-  };
-
-  const handleOpenEdit = (service: Service) => {
-    setEditingService(service);
-    setFormData({
-      name: service.name || '',
-      description: service.description || '',
-      descriptionAr: service.descriptionAr || '',
-      basePrice: service.basePrice || 0,
-    });
-    setIsModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setEditingService(null);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.name.trim()) return;
-
-    if (editingService) {
-      setServicesList((prev) =>
-        prev.map((s) =>
-          s.id === editingService.id
-            ? {
-                ...s,
-                ...formData,
-              }
-            : s
-        )
-      );
-    } else {
-      const newService: Service = {
-        id: `srv-${Date.now()}`,
-        ...formData,
-      };
-      setServicesList((prev) => [newService, ...prev]);
-    }
-    handleCloseModal();
-  };
-
-  const filteredServices = servicesList.filter((s) => {
-    const term = searchTerm.toLowerCase();
-    const nameMatch = s.name.toLowerCase().includes(term);
-    const descMatch = s.description ? s.description.toLowerCase().includes(term) : false;
-    const descArMatch = s.descriptionAr ? s.descriptionAr.toLowerCase().includes(term) : false;
-    return nameMatch || descMatch || descArMatch;
-  });
+export function ServiceCatalog() {
+  const { servicesCatalog, addServiceToCatalog, updateServiceInCatalog, deleteServiceFromCatalog } = useStore();
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Service | null>(null);
 
   return (
-    <div className="space-y-6">
-      {/* Top Bar */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-surface p-4 rounded-xl border border-border">
-        <div className="relative w-full sm:w-80">
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search services..."
-            className="w-full pl-9 pr-4 py-2 rounded-lg bg-surface-hover border border-border text-text-primary placeholder-text-secondary text-sm focus:outline-none focus:border-brand-primary"
-          />
-          <Search className="w-4 h-4 text-text-secondary absolute left-3 top-2.5" />
-        </div>
-
-        <button
-          type="button"
-          onClick={handleOpenAdd}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium text-white bg-brand-primary hover:bg-brand-primary/90 transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add Service</span>
-        </button>
+    <section className="panel">
+      <div className="section-heading">
+        <div><h2>Service catalog</h2><p>Reusable services. Existing project prices remain independent.</p></div>
+        <button className="primary-button" onClick={() => { setEditing(null); setOpen(true); }}>New Service</button>
       </div>
-
-      {/* Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredServices.map((service) => (
-          <div
-            key={service.id}
-            className="bg-surface border border-border rounded-xl p-5 flex flex-col justify-between hover:border-brand-primary/50 transition-colors"
-          >
-            <div>
-              <h4 className="text-base font-semibold text-text-primary mb-1">
-                {service.name}
-              </h4>
-              {service.description && (
-                <p className="text-xs text-text-secondary line-clamp-2 mb-2">
-                  {service.description}
-                </p>
-              )}
-              {service.descriptionAr && (
-                <p className="text-xs text-text-secondary/80 line-clamp-2 mb-4" dir="rtl">
-                  {service.descriptionAr}
-                </p>
-              )}
-            </div>
-
-            <div className="pt-3 border-t border-border flex items-center justify-between mt-auto">
-              <span className="text-sm font-bold text-brand-primary">
-                ${service.basePrice.toLocaleString()}
-              </span>
-              <button
-                type="button"
-                onClick={() => handleOpenEdit(service)}
-                className="px-3 py-1 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors"
-              >
-                Edit
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="relative w-full max-w-lg bg-surface border border-border rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-              <h3 className="text-lg font-semibold text-text-primary">
-                {editingService ? 'Edit Service' : 'Add Service'}
-              </h3>
-              <button
-                type="button"
-                onClick={handleCloseModal}
-                className="text-text-secondary hover:text-text-primary p-1 rounded-lg hover:bg-surface-hover transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
-              <div>
-                <label className="block text-xs font-medium text-text-secondary mb-1">
-                  Service Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g. Media Buying Campaign"
-                  className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm"
-                />
+      <details className="catalog-details">
+        <summary>Browse {servicesCatalog.length} services</summary>
+        <div className="catalog-grid">
+          {servicesCatalog.map((service) => (
+            <article
+              className="catalog-item"
+              key={service.id}
+              role="button"
+              tabIndex={0}
+              aria-label={`Edit ${service.name}`}
+              onClick={() => { setEditing(service); setOpen(true); }}
+              onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setEditing(service); setOpen(true); } }}
+            >
+              <Pencil className="catalog-edit-icon" aria-hidden="true" />
+              <div className="catalog-item-copy">
+                <span>{service.name}</span>
+                <small dir="auto">{service.nameAr || 'Add Arabic wording'}</small>
+                <strong>{service.basePrice.toLocaleString()} <small>base price</small></strong>
               </div>
-
-              <div>
-                <label className="block text-xs font-medium text-text-secondary mb-1">
-                  Base Price ($)
-                </label>
-                <input
-                  type="number"
-                  value={formData.basePrice}
-                  onChange={(e) => setFormData({ ...formData, basePrice: Number(e.target.value) || 0 })}
-                  className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-text-secondary mb-1">
-                  Description (English)
-                </label>
-                <textarea
-                  rows={2}
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm resize-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-text-secondary mb-1">
-                  Description (Arabic)
-                </label>
-                <textarea
-                  rows={2}
-                  dir="rtl"
-                  value={formData.descriptionAr}
-                  onChange={(e) => setFormData({ ...formData, descriptionAr: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg bg-surface-hover border border-border text-text-primary focus:outline-none focus:border-brand-primary text-sm resize-none"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-4 border-t border-border">
-                <button
-                  type="button"
-                  onClick={handleCloseModal}
-                  className="px-4 py-2 rounded-lg text-xs font-medium text-text-secondary hover:bg-surface-hover transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-lg text-xs font-medium text-white bg-brand-primary hover:bg-brand-primary/90 transition-colors"
-                >
-                  {editingService ? 'Save Changes' : 'Add Service'}
-                </button>
-              </div>
-            </form>
-          </div>
+            </article>
+          ))}
         </div>
-      )}
-    </div>
+      </details>
+      {open && <ServiceForm key={editing?.id || 'new'} service={editing} close={() => setOpen(false)} remove={(service) => { if (window.confirm(`Delete “${service.name}” from the catalog? Existing projects will keep their saved copy.`)) { deleteServiceFromCatalog(service.id); setOpen(false); } }} save={(service) => { if (editing) updateServiceInCatalog(service.id, service); else addServiceToCatalog(service); setOpen(false); }} />}
+    </section>
   );
-};
+}
+
+function ServiceForm({ service, close, save, remove }: { service: Service | null; close: () => void; save: (service: Service) => void; remove: (service: Service) => void }) {
+  const [error, setError] = useState('');
+  const dialogRef = useDialog(close);
+  return <ModalPortal>
+    <div ref={dialogRef} onMouseDown={(event) => closeOnBackdrop(event, close)} className="studio-overlay" role="dialog" aria-modal="true" aria-label="Service form">
+      <form className="service-form panel" onSubmit={(event) => {
+        event.preventDefault();
+        const data = new FormData(event.currentTarget);
+        const name = String(data.get('name')).trim();
+        const price = Number(data.get('price'));
+        if (!name || !Number.isFinite(price) || price < 0) { setError('Enter a service name and a valid non-negative price.'); return; }
+        save({id: service?.id || crypto.randomUUID(), name, nameAr: String(data.get('nameAr')).trim(), description: String(data.get('description')).trim(), descriptionAr: String(data.get('descriptionAr')).trim(), subServices: String(data.get('deliverables')).split('\n').map(value => value.trim()).filter(Boolean), subServicesAr: String(data.get('deliverablesAr')).split('\n').map(value => value.trim()).filter(Boolean), basePrice: price, isRecurring: data.has('recurring'), isVariable: data.has('variable')});
+      }}>
+        <div className="section-heading"><h2>{service ? 'Edit Service' : 'New Service'}</h2><button type="button" className="secondary-button" onClick={close}>Close</button></div>
+        {error && <p role="alert">{error}</p>}
+        <div className="form-columns">
+          <label>Service name (English)<input name="name" required defaultValue={service?.name}/></label>
+          <label>اسم الخدمة بالعربية<input name="nameAr" dir="rtl" defaultValue={service?.nameAr}/></label>
+          <label>Description (English)<textarea name="description" defaultValue={service?.description}/></label>
+          <label>الوصف بالعربية<textarea name="descriptionAr" dir="rtl" defaultValue={service?.descriptionAr}/></label>
+          <label>Deliverables — one per line<textarea name="deliverables" rows={4} defaultValue={service?.subServices?.join('\n')}/></label>
+          <label>المخرجات — بند في كل سطر<textarea name="deliverablesAr" dir="rtl" rows={4} defaultValue={service?.subServicesAr?.join('\n')}/></label>
+        </div>
+        <label>Base price (in the project's selected currency)<input name="price" type="number" min="0" step="0.01" required defaultValue={service?.basePrice ?? 0}/></label>
+        <div className="flex gap-5"><label><input name="recurring" type="checkbox" defaultChecked={service?.isRecurring}/> Recurring</label><label><input name="variable" type="checkbox" defaultChecked={service?.isVariable}/> Variable</label></div>
+        <div className="service-form-actions">
+          {service && <button type="button" className="danger-button" onClick={() => remove(service)}><Trash2 aria-hidden="true" /> Delete Service</button>}
+          <button className="primary-button">Save Service</button>
+        </div>
+      </form>
+    </div>
+  </ModalPortal>;
+}

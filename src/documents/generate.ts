@@ -5,6 +5,10 @@ export type Language = 'en' | 'ar';
 export type DocumentKind = 'invoice' | 'contract' | 'report';
 export interface DocumentInput { kind: DocumentKind; language: Language; projects: Project[]; clients: Client[]; timeEntries?: TimeEntry[]; terms?: string; date?: string; period?: string }
 export const escapeHTML = (value: unknown) => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
+export const getDocumentReference = (kind: DocumentKind, clientRef?: string, date?: string) =>
+  kind === 'report'
+    ? `RPT-${(date || new Date().toISOString()).slice(0, 10)}`
+    : `${kind === 'invoice' ? 'INV' : 'CON'}-${clientRef || 'MFx'}`;
 const safeImage = (value?: string) => value && /^data:image\/(png|jpeg|webp);base64,[a-z0-9+/=]+$/i.test(value) ? value : '';
 export function generateDocument(input: DocumentInput) {
   const {kind, language, projects, clients} = input;
@@ -16,7 +20,7 @@ export function generateDocument(input: DocumentInput) {
   const title = kind === 'invoice' ? t('Invoice','فاتورة') : kind === 'contract' ? t('Service Agreement & Scope of Work','عقد خدمات ونطاق العمل') : t('Workspace Report','تقرير الأعمال');
   const project = projects[0];
   const client = clients.find(c=>c.id===project?.clientId);
-  const ref = kind === 'report' ? `RPT-${(input.date || new Date().toISOString()).slice(0,10)}` : `${kind==='invoice'?'INV':'CON'}-${client?.refId || ''}`;
+  const ref = getDocumentReference(kind, client?.refId, input.date);
   const name = (s:Service) => ar ? s.nameAr || s.name : s.name;
   const serviceRows = (project?.services || []).map((s,i)=>`<tr class="service-row"><td class="service-cell"><div class="service-header"><div class="service-number">${String(i+1).padStart(2,'0')}</div><div class="service-name" dir="auto">${e(name(s))}</div>${s.isRecurring?`<span class="badge-tag badge-recurring">${t('Recurring','متكررة')}</span>`:''}${s.isVariable?`<span class="badge-tag badge-variable">${t('Variable','متغيرة')}</span>`:''}</div><ul class="sub-services-list">${[ar?s.descriptionAr || s.description:s.description,...(ar?s.subServicesAr?.length ? s.subServicesAr : s.subServices || []:s.subServices || [])].filter(Boolean).map(v=>`<li dir="auto">${e(v)}</li>`).join('')}</ul></td><td class="price-cell">${money(s.basePrice,project.currency)}</td></tr>`).join('');
   const meta = (label:string,value:string) => `<div class="meta-item"><span class="meta-label">${label}</span><span class="meta-val">${value}</span></div>`;

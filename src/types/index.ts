@@ -31,6 +31,8 @@ export interface Project {
   id: string;
   clientId: string;
   refId: string;
+  /** Original external reference used to make one-way imports idempotent. */
+  sourceRef?: string;
   services: Service[];
   billingModel: BillingModel;
   totalAmount: number;

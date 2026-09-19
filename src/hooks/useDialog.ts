@@ -1,4 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type MouseEvent as ReactMouseEvent } from 'react';
+
+export function closeOnBackdrop(event: ReactMouseEvent<HTMLElement>, onClose: () => void) {
+  if (event.target === event.currentTarget) onClose();
+}
 export function useDialog(onClose:()=>void) {
   const ref=useRef<HTMLDivElement>(null); const close=useRef(onClose); close.current=onClose;
   useEffect(()=>{

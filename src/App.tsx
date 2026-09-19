@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { LayoutDashboard, Briefcase, Settings, Menu, X, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, Briefcase, Settings, Menu, X, BarChart3, LogOut } from 'lucide-react';
 import { Dashboard } from './components/Dashboard';
 import { Workspace } from './components/Workspace';
 import { ThemeToggle } from './components/ThemeToggle';
 import { AdvancedReports } from './components/AdvancedReports';
 import { GoogleSheetsSync } from './components/GoogleSheetsSync';
+import { AUTH_SESSION_KEY } from './utils/auth';
 
 type View = 'dashboard' | 'workspace' | 'reports' | 'settings';
 
@@ -111,6 +112,9 @@ function App() {
           {/* Theme Toggle */}
           <div className="p-4 border-t border-line">
             <ThemeToggle />
+            <button className={`sidebar-signout ${!isSidebarOpen ? 'sidebar-signout-compact' : ''}`} aria-label="Sign out" onClick={() => { sessionStorage.removeItem(AUTH_SESSION_KEY); window.location.reload(); }}>
+              <LogOut aria-hidden="true" />{isSidebarOpen && <span>Sign out</span>}
+            </button>
           </div>
         </div>
       </aside>

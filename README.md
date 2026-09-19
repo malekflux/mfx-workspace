@@ -11,17 +11,18 @@ npm run dev
 
 Open the URL printed by Vite (normally http://localhost:5173/). Keep the same hostname and port: browser storage is separate for each origin.
 
+Sign in with username `mfx-admin` and password `mfx2026`. Authentication lasts for the current browser session; use **Sign out** in the sidebar to lock the workspace again.
+
 ## Use
 
 1. Workspace → New Client. Add contact details and an optional PNG/JPG/WebP logo, up to 2 MB.
-2. Workspace → New Service. Enter the English wording and optional Arabic name, description and deliverables. Browse the catalog to edit a saved service.
+2. Workspace → New Service. Enter the English wording and optional Arabic name, description and deliverables. Browse the catalog to edit or delete a saved service. Deleting from the catalog does not alter existing projects.
 3. New Project → choose a client and services. Adjust each project's prices, currency, dates, paid amount and status. Changes to catalog prices do not rewrite existing projects.
-4. Use a project's invoice or contract button. Choose English or Arabic in Document studio.
-5. For contracts, enter the terms separately in each language. Draft terms are saved with the project. No legal clauses, penalties or payment assumptions are generated automatically.
-6. Download HTML creates a standalone document with the actual MFx logo embedded. Cairo is loaded from Google Fonts and needs network access or a browser cache.
-7. Download PDF generates an A4 PDF directly from the same HTML/CSS, with embedded local Cairo fonts and MFx logo. Print remains available separately. PDF generation requires the Node server (`npm run dev` or `npm run preview`) and installed Edge/Chrome/Chromium; set PDF_BROWSER_PATH for a custom executable. Serving only dist as static files does not provide the PDF endpoint.
-8. Reports → choose a client and project-start period → Generate Report → choose a language.
-9. Settings → Download backup exports your workspace as JSON.
+4. Use a project's invoice or contract button. The preview toolbar contains only the language selector and **Download PDF**.
+5. For contracts, enter the approved English and Arabic terms in the project form. No legal clauses, penalties or payment assumptions are generated automatically.
+6. Download PDF generates an A4 PDF from the same HTML/CSS, with the MFx logo and Cairo font. PDF generation requires the Node server (`npm run dev` or `npm run preview`) and installed Edge/Chrome/Chromium; set PDF_BROWSER_PATH for a custom executable. Serving only `dist` as static files does not provide the PDF endpoint.
+7. Reports → choose a client and project-start period → Generate Report → choose a language.
+8. Settings → Download backup exports your workspace as JSON.
 
 Arabic document labels and direction are translated. Service content uses the Arabic wording entered in the catalog; missing translations preserve the original text. Client names and project notes are preserved as entered.
 
@@ -48,7 +49,7 @@ npm run build
 npm run preview
 ```
 
-`npm test` runs 22 focused regression checks and creates bilingual samples in `verification/`. The build output is `dist/`.
+`npm test` runs 28 focused regression checks and creates bilingual samples in `verification/`. The build output is `dist/`.
 
 Read `PROJECT_COMPLETE.md` for verified results and remaining validation limits. Older milestone documents have been marked as historical.
 
@@ -61,3 +62,5 @@ Read `PROJECT_COMPLETE.md` for verified results and remaining validation limits.
 - Contract and invoice document numbers use CON-MFx-26001 / INV-MFx-26001; the project reference appears separately inside the document. Download filenames include the project suffix to distinguish different projects.
 - Legacy nonstandard references are normalized during version-2 migration, with a recovery copy in browser storage. Internal IDs and relationships are retained.
 - PDF checks: start an isolated dev server on port 5175, run npm test then node scripts/verify-pdf.mjs. Samples are written to output/pdf.
+- Google Sheets source references are retained only for idempotent imports. New imported clients and projects receive the same official sequential MFx references as records created in the interface.
+- Cairo is bundled locally for the application. The interface does not depend on Google Fonts being available.

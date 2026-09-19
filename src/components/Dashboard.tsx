@@ -118,18 +118,19 @@ export const Dashboard = () => {
           <h3 className="text-base font-bold text-ink mb-4">Payments by project start month</h3>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={monthlyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis dataKey="month" stroke="#64748b" fontSize={12} />
-              <YAxis stroke="#64748b" fontSize={12} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-line)" />
+              <XAxis dataKey="month" stroke="var(--text-muted)" fontSize={12} />
+              <YAxis stroke="var(--text-muted)" fontSize={12} />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#fff',
-                  border: '1px solid #e2e8f0',
+                  backgroundColor: 'var(--bg-surface)',
+                  color: 'var(--text-ink)',
+                  border: '1px solid var(--border-line)',
                   borderRadius: '6px',
                   fontSize: '12px'
                 }}
               />
-              <Bar dataKey="revenue" fill="#0b58bd" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="revenue" fill="var(--primary)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

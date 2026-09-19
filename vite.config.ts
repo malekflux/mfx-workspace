@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { pdfPlugin } from './server/pdf.js' // أو المسار الذي يتواجد فيه ملف pdf.ts
+import { pdfPlugin } from './server/pdf.js'
 
 // https://vitejs.dev/config/
 export default defineConfig({

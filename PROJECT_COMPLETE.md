@@ -21,7 +21,7 @@ This report replaces the previous unverified completion claims.
 ## Verified by execution
 
 - `npm run lint`: passed.
-- `npm test`: 22 checks passed, including duplicate insertion, timers, actual partial payments, invalid dates, currency separation, HTML escaping and six document/language combinations.
+- `npm test`: 26 checks passed, including exact palette tokens, print-theme isolation, duplicate insertion, timers, actual partial payments, invalid dates, currency separation, HTML escaping and six document/language combinations.
 - `npm run build`: passed. There is still a non-failing bundle-size advisory for the chart dependency chunk.
 - Browser create flow: a bilingual service, client and project were created on an isolated test origin, with a fractional paid amount and correct remaining balance.
 - Browser edit flow: the saved project's existing data loaded correctly; changing the service price updated the project and balance.
@@ -58,9 +58,13 @@ The `127.0.0.1:5174` browser origin contains clearly labeled QA-only test record
 - Twelve standard bilingual services, sequential client/project references, and Add Client & Project implemented.
 - Added reference previews and counters that retain consumed numbers after deletion. Moving a project to another client allocates that client's next project reference.
 - Direct PDF route renders the shared HTML/CSS using system Edge with embedded local Cairo fonts. Requires the Node dev/preview server, not a static-only dist host.
-- Download PDF clicked in the browser for an Arabic invoice: Downloads/INV-MFx-26001-1-ar.pdf saved, 77,676 bytes.
+- Arabic invoice preview and direct PDF endpoint verified with the document reference `INV-MFx-26001`; PDF filenames now use that same reference consistently.
 - API exported invoice-ar, contract-en, report-ar, report-en and the five-page long-contract-ar into output/pdf. Arabic report and all five long-contract pages visually inspected; earlier invoice and English contract renders inspected too.
 - Live QA created MFx-26001-1 with Active/Pending statuses, and Add Client & Project created MFx-26002 and preselected project MFx-26002-1.
 - Dark computed colors verified: canvas rgb(8,9,10), surface rgb(17,20,24), text rgb(237,237,237), accent rgb(212,175,55).
 - QA records live only on 127.0.0.1:5175. Normal user origin remains localhost:5173.
 - Light computed colors verified: canvas rgb(248,249,250), surface rgb(255,255,255), text rgb(26,29,32), accent rgb(194,103,59). Main localhost:5173 returned HTTP 200 and generated a 77,900-byte Arabic invoice PDF.
+- Fixed a production-build failure caused by an incompatible NodeNext import. `npm run build` now passes.
+- Fixed mobile horizontal overflow in the workspace header, service/client grids and project cards. A narrow mobile viewport was checked with zero page overflow.
+- Fixed Google Sheets imports so external source IDs cannot bypass MFx client/project reference generation; repeated imports remain detectable through `sourceRef`.
+- Bundled Cairo locally for the application and made dashboard chart surfaces follow the active light/dark theme.

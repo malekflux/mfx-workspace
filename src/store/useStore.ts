@@ -37,6 +37,7 @@ interface StoreState {
   servicesCatalog: Service[];
   addServiceToCatalog: (service: Service) => void;
   updateServiceInCatalog: (id: string, data: Partial<Service>) => void;
+  deleteServiceFromCatalog: (id: string) => void;
 }
 
 export const useStore = create<StoreState>()(
@@ -140,6 +141,7 @@ export const useStore = create<StoreState>()(
       // Services Catalog
       servicesCatalog: standardServices,
       updateServiceInCatalog: (id, data) => set(state => ({servicesCatalog: state.servicesCatalog.map(s => s.id === id ? {...s,...data} : s)})),
+      deleteServiceFromCatalog: (id) => set(state => ({servicesCatalog: state.servicesCatalog.filter(service => service.id !== id)})),
       addServiceToCatalog: (service) =>
         set((state) => ({
           servicesCatalog: [...state.servicesCatalog, service],
