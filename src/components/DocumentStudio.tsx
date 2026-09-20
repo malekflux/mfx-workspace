@@ -3,6 +3,7 @@ import { closeOnBackdrop, useDialog } from '../hooks/useDialog';
 import { generateDocument, getDocumentReference } from '../documents/generate';
 import type { DocumentInput, Language } from '../documents/generate';
 import { ModalPortal } from './ModalPortal';
+import { generateContractTerms } from '../utils/projectTerms';
 
 export function DocumentStudio({ input, onClose }: { input: Omit<DocumentInput, 'language'>; onClose: () => void }) {
   const [language, setLanguage] = useState<Language>('en');
@@ -11,9 +12,11 @@ export function DocumentStudio({ input, onClose }: { input: Omit<DocumentInput, 
   const [exporting, setExporting] = useState(false);
   const exportInFlight = useRef(false);
   const dialogRef = useDialog(onClose);
-  const terms = language === 'ar' ? input.projects[0]?.contractTermsAr : input.projects[0]?.contractTermsEn;
+  const project = input.projects[0];
+  const client = input.clients.find((candidate) => candidate.id === project?.clientId);
+  const generatedTerms = project ? generateContractTerms(project, client) : undefined;
+  const terms = language === 'ar' ? project?.contractTermsAr || generatedTerms?.ar : project?.contractTermsEn || generatedTerms?.en;
   const html = useMemo(() => generateDocument({ ...input, language, terms }), [input, language, terms]);
-  const client = input.clients.find((candidate) => candidate.id === input.projects[0]?.clientId);
   const documentReference = getDocumentReference(input.kind, client?.refId, input.date);
 
   const savePDF = async () => {

@@ -2,6 +2,7 @@ export type PaymentStatus = 'pending' | 'partial' | 'paid' | 'overdue';
 export type ProjectStatus = 'active' | 'paused' | 'completed' | 'cancelled';
 export type BillingModel = 'monthly' | 'fixed' | 'hourly' | 'retainer';
 export type PaymentMethod = 'instapay' | 'bank-transfer' | 'cash' | 'card';
+export type PaymentDueMethod = 'split-50-50' | 'due-days';
 
 export interface Client {
   id: string;
@@ -39,6 +40,11 @@ export interface Project {
   paidAmount: number;
   remainingAmount: number;
   paymentMethod: PaymentMethod;
+  /** The schedule agreed for this project. Kept separate from the transfer channel. */
+  paymentDueMethod?: PaymentDueMethod;
+  /** Calendar days within each month, e.g. [1, 15]. */
+  paymentDueDays?: number[];
+  /** Legacy first due day, retained for existing Google Sheets rows. */
   paymentDueDay?: number;
   dueMethod?: string;
   contractStartDate: string;

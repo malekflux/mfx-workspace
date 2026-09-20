@@ -3,8 +3,9 @@ import { useState } from 'react';
 import { closeOnBackdrop, useDialog } from '../hooks/useDialog';
 import { X, Plus, Trash2, DollarSign, Calendar, CreditCard, FileText } from 'lucide-react';
 import { useStore } from '../store/useStore';
-import type { Project, Service } from '../types';
+import type { PaymentDueMethod, Project, Service } from '../types';
 import { ModalPortal } from './ModalPortal';
+import { generateContractTerms, normalizeDueDays } from '../utils/projectTerms';
 
 interface ProjectModalProps {
   isOpen: boolean;
@@ -30,20 +31,27 @@ export const ProjectModal = ({ isOpen, onClose, project, clientId: initialClient
     project?.contractStartDate?.slice(0,10) || new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10)
   );
   const [deadline, setDeadline] = useState(project?.deadline?.split('T')[0] || '');
-  const [paymentDueDay, setPaymentDueDay] = useState(project?.paymentDueDay || 1);
+  const [paymentDueMethod, setPaymentDueMethod] = useState<PaymentDueMethod>(project?.paymentDueMethod || ((project?.billingModel || 'fixed') === 'fixed' ? 'split-50-50' : 'due-days'));
+  const [paymentDueDaysText, setPaymentDueDaysText] = useState(project?.paymentDueDays?.join(',') || String(project?.paymentDueDay || 1));
   const [currency, setCurrency] = useState<Project['currency']>(project?.currency || 'EGP');
   const [projectStatus, setProjectStatus] = useState<Project['projectStatus']>(project?.projectStatus || 'active');
   const [error, setError] = useState('');
   const [notes, setNotes] = useState(project?.notes || '');
   const [contractTermsEn, setContractTermsEn] = useState(project?.contractTermsEn || '');
   const [contractTermsAr, setContractTermsAr] = useState(project?.contractTermsAr || '');
+  const [isTermsEditorOpen, setIsTermsEditorOpen] = useState(false);
   const [paidAmount, setPaidAmount] = useState(project?.paidAmount || 0);
 
   const totalAmount = Math.round(selectedServices.reduce((sum, s) => sum + s.basePrice, 0) * 100) / 100;
   const remainingAmount = Math.round((totalAmount - paidAmount)*100)/100;
 
   const handleAddService = (service: Service) => {
-    setSelectedServices([...selectedServices, { ...service, id: crypto.randomUUID() }]);
+    setSelectedServices([...selectedServices, {
+      ...service,
+      id: crypto.randomUUID(),
+      subServices: [...(service.subServices || [])],
+      subServicesAr: [...(service.subServicesAr || [])],
+    }]);
   };
 
   const handleRemoveService = (serviceId: string) => {
@@ -56,9 +64,21 @@ export const ProjectModal = ({ isOpen, onClose, project, clientId: initialClient
     if (!clientId || selectedServices.length === 0) { setError('Select a client and at least one service.'); return; }
     if (!contractStartDate || (deadline && deadline < contractStartDate)) { setError('Deadline must be on or after the start date.'); return; }
     if (!Number.isFinite(totalAmount) || selectedServices.some(s => !Number.isFinite(s.basePrice) || s.basePrice < 0) || paidAmount < 0 || paidAmount > totalAmount) { setError('Check service prices and the amount paid.'); return; }
+    const paymentDueDays = billingModel === 'hourly' || paymentDueMethod !== 'due-days' ? [] : normalizeDueDays(paymentDueDaysText);
+    if (billingModel !== 'hourly' && paymentDueMethod === 'due-days' && !paymentDueDays.length) { setError('Enter payment days from 1 to 31, separated by commas.'); return; }
 
     const client = clients.find(c => c.id === clientId);
     if (!client) return;
+    const termsProject = {
+      ...(project || { id: '', refId: reference, sourceRef: undefined }),
+      clientId, services: selectedServices, billingModel, totalAmount, paidAmount, remainingAmount,
+      paymentMethod, paymentDueMethod: billingModel === 'hourly' ? undefined : paymentDueMethod,
+      paymentDueDays, paymentDueDay: paymentDueDays[0], contractStartDate, deadline: deadline || undefined,
+      paymentStatus: 'pending' as const, projectStatus, notes, currency, currencySymbol: currency,
+    } as Project;
+    const generatedTerms = generateContractTerms(termsProject, client);
+    const termsEn = contractTermsEn.trim() || generatedTerms.en;
+    const termsAr = contractTermsAr.trim() || generatedTerms.ar;
 
     const paymentStatus: 'pending' | 'partial' | 'paid' | 'overdue' =
       paidAmount >= totalAmount ? 'paid' :
@@ -74,13 +94,15 @@ export const ProjectModal = ({ isOpen, onClose, project, clientId: initialClient
         paidAmount,
         remainingAmount,
         paymentMethod,
-        paymentDueDay,
+        paymentDueMethod: billingModel === 'hourly' ? undefined : paymentDueMethod,
+        paymentDueDays,
+        paymentDueDay: paymentDueDays[0],
         contractStartDate,
         deadline: deadline || undefined,
         paymentStatus,
         notes,
-        contractTermsEn,
-        contractTermsAr,
+        contractTermsEn: termsEn,
+        contractTermsAr: termsAr,
       });
     } else {
       // Create new project
@@ -92,14 +114,16 @@ export const ProjectModal = ({ isOpen, onClose, project, clientId: initialClient
         paidAmount,
         remainingAmount,
         paymentMethod,
-        paymentDueDay,
+        paymentDueMethod: billingModel === 'hourly' ? undefined : paymentDueMethod,
+        paymentDueDays,
+        paymentDueDay: paymentDueDays[0],
         contractStartDate,
         deadline: deadline || undefined,
         paymentStatus,
         projectStatus,
         notes,
-        contractTermsEn,
-        contractTermsAr,
+        contractTermsEn: termsEn,
+        contractTermsAr: termsAr,
         currency,
         currencySymbol: currency,
       });
@@ -185,17 +209,10 @@ export const ProjectModal = ({ isOpen, onClose, project, clientId: initialClient
                 </p>
               ) : (
                 selectedServices.map(service => (
-                  <div
-                    key={service.id}
-                    className="flex items-center justify-between p-3 bg-surface border border-line rounded-lg"
-                  >
-                    <div className="flex-1">
-                      <p className="font-semibold text-ink">{service.name}</p>
-                      {service.description && (
-                        <p className="text-xs text-muted">{service.description}</p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3">
+                  <div key={service.id} className="p-3 bg-surface border border-line rounded-lg">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex-1"><p className="font-semibold text-ink">{service.name}</p>{service.description && <p className="text-xs text-muted">{service.description}</p>}</div>
+                      <div className="flex items-center gap-3">
                       <input aria-label={`Price for ${service.name}`} type="number" min="0" step="0.01" value={service.basePrice} className="w-28" onChange={e => setSelectedServices(selectedServices.map(s => s.id === service.id ? {...s, basePrice: Number(e.target.value)} : s))} />
                       <button
                         type="button"
@@ -204,6 +221,15 @@ export const ProjectModal = ({ isOpen, onClose, project, clientId: initialClient
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 mt-3">
+                      <label className="text-xs text-muted">Deliverables for this project — one per line
+                        <textarea aria-label={`Deliverables for ${service.name}`} rows={4} value={(service.subServices || []).join('\n')} onChange={(event) => setSelectedServices(selectedServices.map((item) => item.id === service.id ? { ...item, subServices: event.target.value.split('\n').map((value) => value.trim()).filter(Boolean) } : item))} />
+                      </label>
+                      <label dir="rtl" className="text-xs text-muted">مخرجات هذا المشروع — بند في كل سطر
+                        <textarea aria-label={`Arabic deliverables for ${service.name}`} rows={4} value={(service.subServicesAr || []).join('\n')} onChange={(event) => setSelectedServices(selectedServices.map((item) => item.id === service.id ? { ...item, subServicesAr: event.target.value.split('\n').map((value) => value.trim()).filter(Boolean) } : item))} />
+                      </label>
                     </div>
                   </div>
                 ))
@@ -256,12 +282,26 @@ export const ProjectModal = ({ isOpen, onClose, project, clientId: initialClient
             </div>
           </div>
 
+          {billingModel !== 'hourly' && <div className="grid grid-cols-2 gap-4">
+            <label className="block text-sm font-semibold text-ink text-muted">Payment due method
+              <select aria-label="Payment due method" value={paymentDueMethod} onChange={(event) => setPaymentDueMethod(event.target.value as PaymentDueMethod)}>
+                <option value="split-50-50">50% / 50%</option>
+                <option value="due-days">Specific days every month</option>
+              </select>
+            </label>
+            {paymentDueMethod === 'due-days' && <label className="block text-sm font-semibold text-ink text-muted">Payment due days
+              <input aria-label="Payment due days" value={paymentDueDaysText} onChange={(event) => setPaymentDueDaysText(event.target.value)} placeholder="1,15" inputMode="numeric" />
+              <span className="block text-xs font-normal mt-1">Examples: 1,15 or 1,11,21</span>
+            </label>}
+          </div>}
+          {billingModel === 'hourly' && <p className="text-sm text-muted">Hourly projects use approved time records and the due date below.</p>}
+
           {/* Dates */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-ink text-muted mb-2">
                 <Calendar className="w-4 h-4 inline mr-2" />
-                Start Date
+                Project / Payment Start Date
               </label>
               <input
                 type="date" required
@@ -279,20 +319,6 @@ export const ProjectModal = ({ isOpen, onClose, project, clientId: initialClient
                 type="date"
                 required={false} min={contractStartDate} aria-label="Deadline" value={deadline}
                 onChange={(e) => setDeadline(e.target.value)}
-                className="w-full px-4 py-2 bg-canvas bg-surface border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-ink"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-ink text-muted mb-2">
-                Payment Due Day
-              </label>
-              <input
-                type="number"
-                min="1"
-                max="31"
-                aria-label="Payment due day" value={paymentDueDay}
-                onChange={(e) => setPaymentDueDay(parseInt(e.target.value))}
                 className="w-full px-4 py-2 bg-canvas bg-surface border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-ink"
               />
             </div>
@@ -317,28 +343,9 @@ export const ProjectModal = ({ isOpen, onClose, project, clientId: initialClient
             </p>
           </div>
 
-          {/* Notes */}
-          <div className="grid grid-cols-2 gap-4">
-            <label>
-              Contract terms (English)
-              <textarea
-                aria-label="Contract terms in English"
-                value={contractTermsEn}
-                onChange={(event) => setContractTermsEn(event.target.value)}
-                rows={4}
-                placeholder="Approved English agreement terms"
-              />
-            </label>
-            <label dir="rtl">
-              بنود العقد بالعربية
-              <textarea
-                aria-label="Contract terms in Arabic"
-                value={contractTermsAr}
-                onChange={(event) => setContractTermsAr(event.target.value)}
-                rows={4}
-                placeholder="بنود الاتفاق المعتمدة بالعربية"
-              />
-            </label>
+          <div className="p-4 bg-canvas border border-line rounded-lg flex items-center justify-between gap-4">
+            <div><p className="font-semibold text-ink">Terms & Conditions</p><p className="text-sm text-muted">Generated from this project’s scope, value, payment plan, and delivery type.</p></div>
+            <button type="button" onClick={() => setIsTermsEditorOpen(true)} className="secondary-button">Review terms</button>
           </div>
 
           {/* Notes */}
@@ -375,6 +382,28 @@ export const ProjectModal = ({ isOpen, onClose, project, clientId: initialClient
           </div>
         </form>
       </div>
+      {isTermsEditorOpen && <TermsEditor project={{ ...(project || { id: '', refId: reference }), clientId, services: selectedServices, billingModel, totalAmount, paidAmount, remainingAmount, paymentMethod, paymentDueMethod, paymentDueDays: normalizeDueDays(paymentDueDaysText), contractStartDate, deadline: deadline || undefined, paymentStatus: 'pending', projectStatus, currency, currencySymbol: currency } as Project} client={selectedClient} valueEn={contractTermsEn} valueAr={contractTermsAr} onSave={(en, ar) => { setContractTermsEn(en); setContractTermsAr(ar); setIsTermsEditorOpen(false); }} onClose={() => setIsTermsEditorOpen(false)} />}
     </div>
   </ModalPortal>;
 };
+
+function TermsEditor({ project, client, valueEn, valueAr, onSave, onClose }: {
+  project: Project;
+  client?: ReturnType<typeof useStore.getState>['clients'][number];
+  valueEn: string;
+  valueAr: string;
+  onSave: (en: string, ar: string) => void;
+  onClose: () => void;
+}) {
+  const generated = generateContractTerms(project, client);
+  const [en, setEn] = useState(valueEn || generated.en);
+  const [ar, setAr] = useState(valueAr || generated.ar);
+  const editorRef = useDialog(onClose);
+  return <div ref={editorRef} onMouseDown={(event) => closeOnBackdrop(event, onClose)} className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-label="Contract terms editor">
+    <div className="bg-surface border border-line rounded-lg max-w-4xl w-full max-h-[88vh] overflow-y-auto p-6">
+      <div className="flex items-center justify-between gap-4 mb-5"><div><h3 className="text-lg font-bold text-ink">Terms & Conditions</h3><p className="text-sm text-muted">Edit the generated agreement before saving this project.</p></div><button type="button" onClick={onClose} className="secondary-button">Close</button></div>
+      <div className="grid grid-cols-2 gap-4"><label>English terms<textarea aria-label="Contract terms in English" rows={16} value={en} onChange={(event) => setEn(event.target.value)} /></label><label dir="rtl">بنود العقد بالعربية<textarea aria-label="Contract terms in Arabic" rows={16} value={ar} onChange={(event) => setAr(event.target.value)} /></label></div>
+      <div className="flex justify-end gap-3 mt-5"><button type="button" onClick={() => { setEn(generated.en); setAr(generated.ar); }} className="secondary-button">Regenerate from project</button><button type="button" onClick={() => onSave(en, ar)} className="primary-button">Save terms</button></div>
+    </div>
+  </div>;
+}
